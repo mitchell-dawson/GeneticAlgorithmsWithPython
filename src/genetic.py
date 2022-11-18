@@ -26,19 +26,6 @@ from abc import ABC, abstractmethod
 from typing import Any, List
 
 
-class Runner:
-    """Class for running the genetic algorithm."""
-
-    start_time: float
-
-    def run(self):
-        self.start_time = time.time()
-
-    def display(self, candidate, fitness):
-        timeDiff = time.time() - self.start_time
-        print("{}\t{}\t{}".format(candidate.genes, fitness(candidate), timeDiff))
-
-
 class Gene:
     pass
 
@@ -66,16 +53,7 @@ class Fitness(ABC):
             The fitness score
         """
 
-class Mutation(ABC):
-    """Abstract base class for mutation functions."""
 
-    def __init__(self, fitness: Fitness, gene_set: GeneSet):
-        self.fitness = fitness
-        self.gene_set = gene_set
-
-    @abstractmethod
-    def __call__(self, parent):
-        """Mutate the parent to create a child"""
     
 class Generation:
     pass
@@ -90,6 +68,16 @@ class Chromosome:
     def fitness(self, fitness: Fitness):
         return fitness(self)
 
+class Mutation(ABC):
+    """Abstract base class for mutation functions."""
+
+    def __init__(self, fitness: Fitness, gene_set: GeneSet):
+        self.fitness = fitness
+        self.gene_set = gene_set
+
+    @abstractmethod
+    def __call__(self, parent: Chromosome) -> Chromosome:
+        """Mutate the parent to create a child"""
 class Selection:
     pass
 
@@ -99,9 +87,11 @@ class Crossover:
 class Population:
     pass
 
-class StoppingCriteria:
-    def __call__(self) -> Any:
-        pass
+class StoppingCriteria(ABC):
+
+    @abstractmethod
+    def __call__(self, chromosome: Chromosome) -> bool:
+        """Return true if can stop the genetic algorithm."""
 
 def _generate_parent(length, gene_set):
     genes = []
@@ -118,28 +108,51 @@ class ChromosomeGenerator(ABC):
     def __call__(self) -> Chromosome:
         """Generate a chromosome from the gene set"""
 
-def get_best(chromosome_generator, fitness, stopping_criteria, display, mutate):
 
-    random.seed()
+class Runner(ABC):
+    """Class for running the genetic algorithm."""
 
-    best_parent = chromosome_generator()
-    display(best_parent, fitness)
+    start_time: float
+    chromosome_generator: ChromosomeGenerator
+    fitness: Fitness
+    stopping_criteria: StoppingCriteria
+    mutate: Mutation
 
-    if fitness(best_parent) >= stopping_criteria.optimal_fitness:
-        return best_parent
+    def run(self) -> Chromosome:
+        """Run the genetic algorithm.
 
-    while True:
+        Returns
+        -------
+        Chromosome
+            The best chromosome found
+        """
 
-        child = mutate(best_parent)
+        random.seed()
 
-        if fitness(best_parent) >= fitness(child):
-            continue
+        self.start_time = time.time()
 
-        display(child, fitness)
+        best_parent = self.chromosome_generator()
+        self.display(best_parent, self.fitness)
 
-        if fitness(child) >= stopping_criteria.optimal_fitness:
-            return child
+        if self.stopping_criteria(best_parent):
+            return best_parent
 
-        best_parent = child
+        while True:
+
+            child = self.mutate(best_parent)
+
+            if self.fitness(best_parent) >= self.fitness(child):
+                continue
+
+            self.display(child, self.fitness)
+
+            if self.stopping_criteria(child):
+                return child
+
+            best_parent = child
+
+    @abstractmethod
+    def display(self, candidate, fitness):
+        pass
 
 

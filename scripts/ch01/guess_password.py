@@ -1,13 +1,10 @@
 import os
 import random
 import sys
-
-print(sys.path)
-print(os.getcwd())
+import time
 
 from src.genetic import (Chromosome, ChromosomeGenerator, Fitness, GeneSet,
-                         Mutation, Population, Runner, StoppingCriteria,
-                         get_best)
+                         Mutation, Runner, StoppingCriteria)
 
 
 class GuessPasswordFitness(Fitness):
@@ -32,7 +29,6 @@ class GuessPasswordFitness(Fitness):
             1 for expected, actual in zip(self.target, chromosome.genes) if expected == actual
         )
 
-
 class GuessPasswordMutation(Mutation):
 
     def __init__(self, fitness: Fitness, gene_set: GeneSet):
@@ -48,15 +44,19 @@ class GuessPasswordMutation(Mutation):
 
 
 class GuessPasswordStoppingCriteria(StoppingCriteria):
-    def __init__(self, target):
+    def __init__(self, target, fitness):
         self.target = target
+        self.fitness = fitness
 
     @property
     def optimal_fitness(self) -> float:
         return len(self.target)
 
-    def __call__(self, population: Population) -> bool:
-        return population.best.fitness >= len(self.target)
+    def __call__(self, chromosome: Chromosome) -> bool:
+        """Return true if can stop the genetic algorithm.
+        """
+
+        return self.fitness(chromosome) >= len(self.target)
 
 class GuessPasswordChromosomeGenerator(ChromosomeGenerator):
 
@@ -72,23 +72,31 @@ class GuessPasswordChromosomeGenerator(ChromosomeGenerator):
         genes = "".join(genes)
         return Chromosome(genes)
 
-def guess_password(target, gene_set):
+class GuessPasswordRunner(Runner):
 
-    runner = Runner()
-    runner.run()
+    def __init__(self, chromosome_generator: ChromosomeGenerator, fitness: Fitness, stopping_criteria: StoppingCriteria, mutate: Mutation):
+        self.chromosome_generator = chromosome_generator
+        self.fitness = fitness
+        self.stopping_criteria = stopping_criteria
+        self.mutate = mutate
+
+    def display(self, candidate, fitness):
+        timeDiff = time.time() - self.start_time
+        print("{}\t{}\t{}".format(candidate.genes, fitness(candidate), timeDiff))
+
+
+def guess_password(target, gene_set) -> Chromosome:
 
     fitness = GuessPasswordFitness(target)
-
     chromosome_generator = GuessPasswordChromosomeGenerator(gene_set, len(target))
+    stopping_criteria = GuessPasswordStoppingCriteria(target, fitness)
+    mutate = GuessPasswordMutation(fitness, gene_set)
 
-    best = get_best(
-        chromosome_generator,
-        fitness,
-        GuessPasswordStoppingCriteria(target),
-        runner.display,
-        GuessPasswordMutation(fitness, gene_set),
-    )
-    assert best.genes == target
+    runner = GuessPasswordRunner(chromosome_generator, fitness, stopping_criteria, mutate)
+    
+    best = runner.run()
+    return best
+
 
 
 def main():
