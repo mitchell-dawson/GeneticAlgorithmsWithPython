@@ -23,7 +23,7 @@ print(sys.path)
 import random
 import time
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, Iterable, List
 
 
 class Gene:
@@ -32,29 +32,7 @@ class Gene:
 class GeneSet(List[Gene]):
     pass
 
-class Fitness(ABC):
-    """Abstract base class for fitness functions."""
 
-    def __init__(self, target: Any):
-        self.target = target
-
-    @abstractmethod
-    def __call__(self, guess: Any) -> float:
-        """Return a fitness score for the guess
-
-        Parameters
-        ----------
-        guess : Any
-            The guess to score
-
-        Returns
-        -------
-        float
-            The fitness score
-        """
-
-
-    
 class Generation:
     pass
 
@@ -65,8 +43,15 @@ class Chromosome:
     def __repr__(self) -> str:
         return f"Chromosome({self.genes})"
 
-    def fitness(self, fitness: Fitness):
-        return fitness(self)
+class Fitness(ABC):
+    """Abstract base class for fitness functions."""
+
+    def __init__(self, target: Any):
+        self.target = target
+
+    @abstractmethod
+    def __call__(self, chromosome: Chromosome) -> float:
+        """Return a fitness score for the guess"""
 
 class Mutation(ABC):
     """Abstract base class for mutation functions."""
@@ -88,26 +73,18 @@ class Population:
     pass
 
 class StoppingCriteria(ABC):
+    """Abstract base class for stopping criteria functions."""
 
     @abstractmethod
     def __call__(self, chromosome: Chromosome) -> bool:
         """Return true if can stop the genetic algorithm."""
-
-def _generate_parent(length, gene_set):
-    genes = []
-    while len(genes) < length:
-        sampleSize = min(length - len(genes), len(gene_set))
-        genes.extend(random.sample(gene_set, sampleSize))
-    genes = "".join(genes)
-    return Chromosome(genes)
-
 class ChromosomeGenerator(ABC):
-    """Abstract base class for chromosome generators."""
+    """Abstract base class for generating chromosomes."""
+    gene_set: Any
 
     @abstractmethod
     def __call__(self) -> Chromosome:
         """Generate a chromosome from the gene set"""
-
 
 class Runner(ABC):
     """Class for running the genetic algorithm."""
@@ -117,6 +94,10 @@ class Runner(ABC):
     fitness: Fitness
     stopping_criteria: StoppingCriteria
     mutate: Mutation
+    
+    @abstractmethod
+    def display(self, candidate, fitness):
+        pass
 
     def run(self) -> Chromosome:
         """Run the genetic algorithm.
@@ -131,28 +112,29 @@ class Runner(ABC):
 
         self.start_time = time.time()
 
+        # generate an initial chromosome
         best_parent = self.chromosome_generator()
         self.display(best_parent, self.fitness)
 
+        # if the initial chromosome is good enough, we're done
         if self.stopping_criteria(best_parent):
             return best_parent
 
         while True:
 
+            # create child by mutating the parent
             child = self.mutate(best_parent)
 
+            # repeat until child is better than the parent
             if self.fitness(best_parent) >= self.fitness(child):
                 continue
+            else:
+                self.display(child, self.fitness)
 
-            self.display(child, self.fitness)
-
+            # stop if the child is good enough, otherwise repeat
             if self.stopping_criteria(child):
                 return child
-
-            best_parent = child
-
-    @abstractmethod
-    def display(self, candidate, fitness):
-        pass
+            else:
+                best_parent = child
 
 
