@@ -4,3 +4,5 @@ output
 /.idea
 **/.cache/*
 *.ukp
+.vscode
+*.egg-info*
