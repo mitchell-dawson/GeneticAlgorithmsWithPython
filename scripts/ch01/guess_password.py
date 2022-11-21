@@ -3,11 +3,14 @@ import random
 import sys
 import time
 
-from src.genetic import (Chromosome, ChromosomeGenerator, Fitness, GeneSet,
-                         Mutation, Runner, StoppingCriteria)
+from src.genetic import (AbsoluteFitness, Chromosome, ChromosomeGenerator,
+                         GeneSet, Mutation, Runner, StoppingCriteria)
 
 
-class GuessPasswordFitness(Fitness):
+class GuessPasswordFitness(AbsoluteFitness):
+
+    def __init__(self, target: str) -> None:
+        self.target = target
 
     def __call__(self, chromosome: Chromosome) -> float:
         """Return a fitness score for the guess. The higher the score, the better the 
@@ -31,7 +34,7 @@ class GuessPasswordFitness(Fitness):
 
 class GuessPasswordMutation(Mutation):
 
-    def __init__(self, fitness: Fitness, gene_set: GeneSet):
+    def __init__(self, fitness: GuessPasswordFitness, gene_set: GeneSet):
         super().__init__(fitness, gene_set)
 
     def __call__(self, parent):
@@ -74,15 +77,15 @@ class GuessPasswordChromosomeGenerator(ChromosomeGenerator):
 
 class GuessPasswordRunner(Runner):
 
-    def __init__(self, chromosome_generator: ChromosomeGenerator, fitness: Fitness, stopping_criteria: StoppingCriteria, mutate: Mutation):
+    def __init__(self, chromosome_generator: ChromosomeGenerator, fitness: GuessPasswordFitness, stopping_criteria: StoppingCriteria, mutate: Mutation):
         self.chromosome_generator = chromosome_generator
         self.fitness = fitness
         self.stopping_criteria = stopping_criteria
         self.mutate = mutate
 
-    def display(self, candidate, fitness):
+    def display(self, candidate):
         timeDiff = time.time() - self.start_time
-        print("{}\t{}\t{}".format(candidate.genes, fitness(candidate), timeDiff))
+        print("{}\t{}\t{}".format(candidate.genes, self.fitness(candidate), timeDiff))
 
 
 def guess_password(target, gene_set) -> Chromosome:

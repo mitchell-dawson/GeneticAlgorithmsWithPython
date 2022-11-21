@@ -1,21 +1,19 @@
 import random
 import time
 
-from src.genetic import (Chromosome, ChromosomeGenerator, Fitness, GeneSet,
-                         Mutation, Population, Runner, StoppingCriteria)
+from src.genetic import (AbsoluteFitness, Chromosome, ChromosomeGenerator,
+                         GeneSet, Mutation, Runner, StoppingCriteria)
 
 
-class OneMaxFitness(Fitness):
+class OneMaxFitness(AbsoluteFitness):
 
     def __call__(self, chromosome: Chromosome) -> float:
-        try:
-            return chromosome.genes.count("1")
-        except:
-            return 0
+        return chromosome.genes.count("1")
+
 
 class OneMaxMutation(Mutation):
 
-    def __init__(self, fitness: Fitness, gene_set: GeneSet):
+    def __init__(self, fitness: AbsoluteFitness, gene_set: GeneSet):
         super().__init__(fitness, gene_set)
 
     def __call__(self, parent):
@@ -28,7 +26,7 @@ class OneMaxMutation(Mutation):
 
 
 class OneMaxStoppingCriteria(StoppingCriteria):
-    def __init__(self, target: int, fitness: Fitness):
+    def __init__(self, target: int, fitness: AbsoluteFitness):
         self.target = target
         self.fitness = fitness
 
@@ -56,18 +54,18 @@ class OneMaxChromosomeGenerator(ChromosomeGenerator):
 
 class OneMaxRunner(Runner):
 
-    def __init__(self, chromosome_generator: ChromosomeGenerator, fitness: Fitness, stopping_criteria: StoppingCriteria, mutate: Mutation):
+    def __init__(self, chromosome_generator: ChromosomeGenerator, fitness: AbsoluteFitness, stopping_criteria: StoppingCriteria, mutate: Mutation):
         self.chromosome_generator = chromosome_generator
         self.fitness = fitness
         self.stopping_criteria = stopping_criteria
         self.mutate = mutate
 
-    def display(self, candidate: Chromosome, fitness: Fitness):
+    def display(self, candidate: Chromosome):
         timeDiff = time.time() - self.start_time
         print("{}...{}\t{:3.2f}\t{}".format(
             ''.join(map(str, candidate.genes[:15])),
             ''.join(map(str, candidate.genes[-15:])),
-            fitness(candidate),
+            self.fitness(candidate),
             timeDiff))
 
 
@@ -75,7 +73,7 @@ class OneMaxRunner(Runner):
 
 def one_max(target, gene_set):
 
-    fitness = OneMaxFitness(target)
+    fitness = OneMaxFitness()
     chromosome_generator = OneMaxChromosomeGenerator(gene_set, target)
     stopping_criteria = OneMaxStoppingCriteria(target, fitness)
     mutation = OneMaxMutation(fitness, gene_set)

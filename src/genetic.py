@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import sys
+
 # File: genetic.py
 #    from chapter 1 of _Genetic Algorithms with Python_
 #
@@ -15,7 +19,6 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
-import sys
 
 print(sys.path)
 
@@ -23,7 +26,7 @@ print(sys.path)
 import random
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, List
+from typing import Any, List
 
 
 class Gene:
@@ -44,14 +47,28 @@ class Chromosome:
         return f"Chromosome({self.genes})"
 
 class Fitness(ABC):
-    """Abstract base class for fitness functions."""
+    """Fitness is the abstract base class for fitness functions.
+    """
 
-    def __init__(self, target: Any):
-        self.target = target
+class AbsoluteFitness(Fitness):
+    """AbsoluteFitness is a fitness function that returns the absolute value
+    of the candidate fitness
+    """
 
     @abstractmethod
     def __call__(self, chromosome: Chromosome) -> float:
         """Return a fitness score for the guess"""
+
+class RelativeFitness(Fitness):
+    """A fitness function that can be computed from the chromosome's genes."""
+
+    def __init__(self, chromosome: Chromosome):
+        self.chromosome = chromosome
+
+    @abstractmethod
+    def __gt__(self, other: RelativeFitness) -> bool:
+        """Return True if this fitness is better than the other."""
+
 
 class Mutation(ABC):
     """Abstract base class for mutation functions."""
@@ -96,7 +113,7 @@ class Runner(ABC):
     mutate: Mutation
     
     @abstractmethod
-    def display(self, candidate, fitness):
+    def display(self, candidate):
         pass
 
     def run(self) -> Chromosome:
@@ -114,7 +131,7 @@ class Runner(ABC):
 
         # generate an initial chromosome
         best_parent = self.chromosome_generator()
-        self.display(best_parent, self.fitness)
+        self.display(best_parent)
 
         # if the initial chromosome is good enough, we're done
         if self.stopping_criteria(best_parent):
@@ -126,10 +143,10 @@ class Runner(ABC):
             child = self.mutate(best_parent)
 
             # repeat until child is better than the parent
-            if self.fitness(best_parent) >= self.fitness(child):
+            if self.fitness(best_parent) > self.fitness(child):
                 continue
             else:
-                self.display(child, self.fitness)
+                self.display(child)
 
             # stop if the child is good enough, otherwise repeat
             if self.stopping_criteria(child):
