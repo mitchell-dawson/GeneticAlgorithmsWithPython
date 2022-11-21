@@ -46,6 +46,9 @@ class Chromosome:
     def __repr__(self) -> str:
         return f"Chromosome({self.genes})"
 
+    def __eq__(self, other: Chromosome) -> bool:
+        return self.genes == other.genes
+
 class Fitness(ABC):
     """Fitness is the abstract base class for fitness functions.
     """
@@ -111,6 +114,8 @@ class Runner(ABC):
     fitness: Fitness
     stopping_criteria: StoppingCriteria
     mutate: Mutation
+    fitness_stagnation_detection: FitnessStagnationDetection
+    
     
     @abstractmethod
     def display(self, candidate):
@@ -126,6 +131,8 @@ class Runner(ABC):
         """
 
         random.seed()
+
+        fitness_stagnation_detector =  FitnessStagnationDetection(self.fitness, 10000)
 
         self.start_time = time.time()
 
@@ -144,7 +151,11 @@ class Runner(ABC):
 
             # repeat until child is better than the parent
             if self.fitness(best_parent) > self.fitness(child):
-                continue
+                
+                if fitness_stagnation_detector(best_parent):
+                    return best_parent
+                else:
+                    continue
             else:
                 self.display(child)
 
@@ -155,3 +166,34 @@ class Runner(ABC):
                 best_parent = child
 
 
+class FitnessStagnationDetection(StoppingCriteria):
+    """Stop the genetic algorithm if the fitness has not improved in the
+    last 10 generations.
+    """
+
+    def __init__(self, fitness: Fitness, generations: int = 10):
+        self.fitness = fitness
+        self.generations = generations
+        self.last_fitness = None
+        self.last_generation = 0
+
+    def __call__(self, chromosome: Chromosome) -> bool:
+        """Return true if can stop the genetic algorithm."""
+
+        if self.last_fitness is None:
+            self.last_fitness = self.fitness(chromosome)
+            self.last_generation = 0
+            return False
+
+        if self.fitness(chromosome) > self.last_fitness:
+            self.last_fitness = self.fitness(chromosome)
+            self.last_generation = 0
+            return False
+
+
+        self.last_generation += 1
+
+        if self.last_generation >= self.generations:
+           print(f"FitnessStagnationDetection: {self.last_generation} generations without improvement") 
+
+        return self.last_generation >= self.generations
