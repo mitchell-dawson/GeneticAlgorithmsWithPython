@@ -12,6 +12,7 @@ of money earned.
 """
 from __future__ import annotations
 
+import logging
 import random
 import time
 
@@ -156,10 +157,7 @@ class EightQueensRunner(Runner):
 
         board = Board(candidate.genes, self.size)
         board.print()
-        print("{}\t- {}\t{}".format(
-            ' '.join(map(str, candidate.genes)),
-            self.fitness(candidate),
-            time_diff))
+        return f"time = {time_diff}"
 
 def eight_queens(size:int) -> Chromosome:
     """Run the genetic algorithm to find the solution for the eight queens problem.
@@ -194,6 +192,9 @@ def eight_queens(size:int) -> Chromosome:
     return best
 
 def main():
+
+    logging_format = "[%(levelname)8s :%(filename)15s:%(lineno)4s - %(funcName)10s] %(message)s"
+    logging.basicConfig(format=logging_format, level=logging.DEBUG)
 
     size = 8
     eight_queens(size)

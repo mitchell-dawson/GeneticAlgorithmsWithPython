@@ -79,12 +79,9 @@ class OneMaxRunner(Runner):
         self.mutate = mutate
 
     def display(self, candidate: Chromosome):
-        timeDiff = time.time() - self.start_time
-        logging.info("{}...{}\t{:3.2f}\t{}".format(
-            ''.join(map(str, candidate.genes[:15])),
-            ''.join(map(str, candidate.genes[-15:])),
-            self.fitness(candidate),
-            timeDiff))
+        time_diff = time.time() - self.start_time
+        return f"time = {time_diff}"
+
 
 
 
