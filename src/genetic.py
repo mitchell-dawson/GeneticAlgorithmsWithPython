@@ -23,6 +23,7 @@ import sys
 print(sys.path)
 
 
+import logging
 import random
 import time
 from abc import ABC, abstractmethod
@@ -129,41 +130,64 @@ class Runner(ABC):
         Chromosome
             The best chromosome found
         """
-
+        logging.info("Starting genetic algorithm run")
         random.seed()
 
         fitness_stagnation_detector =  FitnessStagnationDetection(self.fitness, 10000)
 
         self.start_time = time.time()
+        iteration_num = 0
+        
 
         # generate an initial chromosome
         best_parent = self.chromosome_generator()
-        self.display(best_parent)
+        logging.info("Initial chromosome: {%s}", best_parent)
 
         # if the initial chromosome is good enough, we're done
         if self.stopping_criteria(best_parent):
+            logging.info("Stopping criteria met on initial chromosome")
             return best_parent
 
-        while True:
+        while True:  # repeat until child is as good or better than the parent
+            
+            iteration_num += 1
+            logging.debug("Starting iteration %s", iteration_num)
 
-            # create child by mutating the parent
+            logging.debug("Creating child by mutating parent...")
             child = self.mutate(best_parent)
+            logging.debug("Child created: %s", child)
 
-            # repeat until child is better than the parent
+            logging.debug("Comparing child and parent fitness...")
             if self.fitness(best_parent) > self.fitness(child):
-                
+                logging.debug("Child is not as fit as parent")
+
                 if fitness_stagnation_detector(best_parent):
+                    logging.info("Fitness stagnation detected")
+                    logging.debug("Iteration complete")
+                    logging.debug("= "*30)
                     return best_parent
                 else:
+                    logging.debug("Fitness stagnation not detected")
+                    logging.debug("Iteration complete")
+                    logging.debug("= "*30)
                     continue
             else:
-                self.display(child)
+                logging.debug("Child is as fit or more fit than parent")
+                logging.info("New best chromosome found: %s", child)
 
             # stop if the child is good enough, otherwise repeat
+            logging.debug("Checking stopping criteria...")
             if self.stopping_criteria(child):
+                logging.info("Stopping criteria met by child")
+                logging.debug("Iteration complete")
+                logging.debug("= "*30)
                 return child
             else:
+                logging.debug("Stopping criteria not met by child")
                 best_parent = child
+
+            logging.debug("Iteration complete")
+            logging.debug("= "*30)
 
 
 class FitnessStagnationDetection(StoppingCriteria):
@@ -183,17 +207,22 @@ class FitnessStagnationDetection(StoppingCriteria):
         if self.last_fitness is None:
             self.last_fitness = self.fitness(chromosome)
             self.last_generation = 0
+            logging.debug("FitnessStagnationDetection: setting first fitness")
             return False
 
         if self.fitness(chromosome) > self.last_fitness:
             self.last_fitness = self.fitness(chromosome)
             self.last_generation = 0
+            logging.debug("FitnessStagnationDetection: fitness improved")
             return False
 
 
         self.last_generation += 1
 
         if self.last_generation >= self.generations:
-           print(f"FitnessStagnationDetection: {self.last_generation} generations without improvement") 
+            logging.info(
+                "FitnessStagnationDetection: %s generations without improvement", 
+                self.last_generation
+            )
 
         return self.last_generation >= self.generations

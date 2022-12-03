@@ -1,3 +1,4 @@
+import logging
 import random
 import time
 
@@ -8,7 +9,10 @@ from src.genetic import (AbsoluteFitness, Chromosome, ChromosomeGenerator,
 class OneMaxFitness(AbsoluteFitness):
 
     def __call__(self, chromosome: Chromosome) -> float:
-        return chromosome.genes.count("1")
+        logging.debug("Calculating fitness for %s", chromosome)
+        fitness = chromosome.genes.count("1")
+        logging.debug("%s has fitness %.1f", chromosome, fitness)  
+        return fitness
 
 
 class OneMaxMutation(Mutation):
@@ -17,12 +21,26 @@ class OneMaxMutation(Mutation):
         super().__init__(fitness, gene_set)
 
     def __call__(self, parent):
+
+        logging.debug('- '*30)
+        logging.debug("Mutating parent: %s", parent)
+        
         index = random.randrange(0, len(parent.genes))
+        logging.debug("Index to mutate: %s", index)
+
         child_genes = list(parent.genes)
         new_gene, alternate = random.sample(self.gene_set, 2)
+        logging.debug("New_gene: %d, alternate: %d", new_gene, alternate)
+
         child_genes[index] = alternate if new_gene == child_genes[index] else new_gene
         genes = "".join([str(X) for X in child_genes])
-        return Chromosome(genes)
+        chromosome = Chromosome(genes)
+        logging.debug("Mutated child created: %s", chromosome)
+        
+        logging.debug("Mutation complete")
+        logging.debug('- '*30)
+
+        return chromosome
 
 
 class OneMaxStoppingCriteria(StoppingCriteria):
@@ -62,7 +80,7 @@ class OneMaxRunner(Runner):
 
     def display(self, candidate: Chromosome):
         timeDiff = time.time() - self.start_time
-        print("{}...{}\t{:3.2f}\t{}".format(
+        logging.info("{}...{}\t{:3.2f}\t{}".format(
             ''.join(map(str, candidate.genes[:15])),
             ''.join(map(str, candidate.genes[-15:])),
             self.fitness(candidate),
@@ -91,7 +109,10 @@ def one_max(target, gene_set):
 
 def main():
 
-    target = 100
+    logging_format = "[%(levelname)8s :%(filename)15s:%(lineno)4s - %(funcName)10s] %(message)s"
+    logging.basicConfig(format=logging_format, level=logging.DEBUG)
+
+    target = 30
     gene_set = [0, 1]
     one_max(target, gene_set)
 
