@@ -27,15 +27,19 @@ import logging
 import random
 import time
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, List, Protocol
 
 
-class Gene:
+class Gene(Protocol):
     pass
 
 
-class GeneSet(List[Gene]):
-    pass
+class Chromosome(Protocol):
+    """Chromosome for the genetic algorithm."""
+
+
+class GeneSet(Protocol):
+    """Gene set for the genetic algorithm."""
 
 
 class Generation:
@@ -123,7 +127,7 @@ class Runner(ABC):
     def display(self, candidate):
         pass
 
-    def run(self) -> Chromosome:
+    def run(self, fitness_stagnation_limit: int = 10000) -> Chromosome:
         """Run the genetic algorithm.
 
         Returns
@@ -134,7 +138,9 @@ class Runner(ABC):
         logging.info("Starting genetic algorithm run")
         random.seed()
 
-        fitness_stagnation_detector = FitnessStagnationDetection(self.fitness, 10000)
+        fitness_stagnation_detector = FitnessStagnationDetection(
+            self.fitness, fitness_stagnation_limit
+        )
 
         self.start_time = time.time()
         iteration_num = 0
@@ -155,7 +161,7 @@ class Runner(ABC):
 
             logging.debug("Creating child by mutating parent...")
             child = self.mutate(best_parent)
-            logging.debug("Child created: %s", child)
+            logging.debug("Child created: %s", str(child))
 
             logging.debug("Comparing child and parent fitness...")
             if self.fitness(best_parent) > self.fitness(child):
