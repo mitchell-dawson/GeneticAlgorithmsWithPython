@@ -33,6 +33,7 @@ from typing import Any, List
 class Gene:
     pass
 
+
 class GeneSet(List[Gene]):
     pass
 
@@ -40,19 +41,10 @@ class GeneSet(List[Gene]):
 class Generation:
     pass
 
-class Chromosome:
-    def __init__(self, genes):
-        self.genes = genes
-
-    def __repr__(self) -> str:
-        return f"Chromosome({self.genes})"
-
-    def __eq__(self, other: Chromosome) -> bool:
-        return self.genes == other.genes
 
 class Fitness(ABC):
-    """Fitness is the abstract base class for fitness functions.
-    """
+    """Fitness is the abstract base class for fitness functions."""
+
 
 class AbsoluteFitness(Fitness):
     """AbsoluteFitness is a fitness function that returns the absolute value
@@ -62,6 +54,7 @@ class AbsoluteFitness(Fitness):
     @abstractmethod
     def __call__(self, chromosome: Chromosome) -> float:
         """Return a fitness score for the guess"""
+
 
 class RelativeFitness(Fitness):
     """A fitness function that can be computed from the chromosome's genes."""
@@ -84,14 +77,19 @@ class Mutation(ABC):
     @abstractmethod
     def __call__(self, parent: Chromosome) -> Chromosome:
         """Mutate the parent to create a child"""
+
+
 class Selection:
     pass
+
 
 class Crossover:
     pass
 
+
 class Population:
     pass
+
 
 class StoppingCriteria(ABC):
     """Abstract base class for stopping criteria functions."""
@@ -99,13 +97,17 @@ class StoppingCriteria(ABC):
     @abstractmethod
     def __call__(self, chromosome: Chromosome) -> bool:
         """Return true if can stop the genetic algorithm."""
+
+
 class ChromosomeGenerator(ABC):
     """Abstract base class for generating chromosomes."""
+
     gene_set: Any
 
     @abstractmethod
     def __call__(self) -> Chromosome:
         """Generate a chromosome from the gene set"""
+
 
 class Runner(ABC):
     """Class for running the genetic algorithm."""
@@ -116,8 +118,7 @@ class Runner(ABC):
     stopping_criteria: StoppingCriteria
     mutate: Mutation
     fitness_stagnation_detection: FitnessStagnationDetection
-    
-    
+
     @abstractmethod
     def display(self, candidate):
         pass
@@ -133,15 +134,14 @@ class Runner(ABC):
         logging.info("Starting genetic algorithm run")
         random.seed()
 
-        fitness_stagnation_detector =  FitnessStagnationDetection(self.fitness, 10000)
+        fitness_stagnation_detector = FitnessStagnationDetection(self.fitness, 10000)
 
         self.start_time = time.time()
         iteration_num = 0
-        
 
         # generate an initial chromosome
         best_parent = self.chromosome_generator()
-        logging.info("Initial chromosome: {%s}", best_parent)
+        logging.info("Initial chromosome: %s", best_parent)
 
         # if the initial chromosome is good enough, we're done
         if self.stopping_criteria(best_parent):
@@ -149,7 +149,7 @@ class Runner(ABC):
             return best_parent
 
         while True:  # repeat until child is as good or better than the parent
-            
+
             iteration_num += 1
             logging.debug("Starting iteration %s", iteration_num)
 
@@ -164,12 +164,12 @@ class Runner(ABC):
                 if fitness_stagnation_detector(best_parent):
                     logging.info("Fitness stagnation detected")
                     logging.debug("Iteration complete")
-                    logging.debug("= "*30)
+                    logging.debug("= " * 30)
                     return best_parent
                 else:
                     logging.debug("Fitness stagnation not detected")
                     logging.debug("Iteration complete")
-                    logging.debug("= "*30)
+                    logging.debug("= " * 30)
                     continue
             else:
                 logging.debug("Child is as fit or more fit than parent")
@@ -181,14 +181,14 @@ class Runner(ABC):
             if self.stopping_criteria(child):
                 logging.info("Stopping criteria met by child")
                 logging.debug("Iteration complete")
-                logging.debug("= "*30)
+                logging.debug("= " * 30)
                 return child
             else:
                 logging.debug("Stopping criteria not met by child")
                 best_parent = child
 
             logging.debug("Iteration complete")
-            logging.debug("= "*30)
+            logging.debug("= " * 30)
 
 
 class FitnessStagnationDetection(StoppingCriteria):
@@ -217,13 +217,12 @@ class FitnessStagnationDetection(StoppingCriteria):
             logging.debug("FitnessStagnationDetection: fitness improved")
             return False
 
-
         self.last_generation += 1
 
         if self.last_generation >= self.generations:
             logging.info(
-                "FitnessStagnationDetection: %s generations without improvement", 
-                self.last_generation
+                "FitnessStagnationDetection: %s generations without improvement",
+                self.last_generation,
             )
 
         return self.last_generation >= self.generations
