@@ -1,3 +1,4 @@
+import networkx as nx
 import pytest
 
 from src.graph import Graph
@@ -90,3 +91,27 @@ def test_from_col_file_states_Graph(adjacent_states_col_file):
     graph = Graph.from_col_file(adjacent_states_col_file)
     assert len(graph.nodes) == 51
     assert len(graph.edges) == 107
+
+def test_plot_simple_Graph(simple_col_file, temp_folder):
+    """GIVEN a simple graph
+    WHEN the graph is plotted
+    THEN a file is created
+    """
+    graph = Graph.from_col_file(simple_col_file)
+    positions = nx.planar_layout(graph)
+    output_path = graph.plot(temp_folder, positions=positions)
+    assert output_path.exists()
+
+
+def test_plot_states_Graph(adjacent_states_col_file, temp_folder):
+    """GIVEN a simple graph
+    WHEN the graph is plotted
+    THEN a file is created
+    """
+    graph = Graph.from_col_file(adjacent_states_col_file)
+
+    positions = nx.planar_layout(graph)
+    positions = nx.spring_layout(graph, pos=positions, seed=100, k=1)
+
+    output_path = graph.plot(temp_folder, positions=positions)
+    assert output_path.exists()

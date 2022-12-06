@@ -64,6 +64,31 @@ class Graph(nx.Graph):
 
         return graph
     
+    def plot(self, output_folder: Path, positions, file_name: str = "graph.png") -> Path:
+        """Plot the graph.
+
+        Parameters
+        ----------
+        output_folder : Path
+            The folder to save the plot to.
+        file_name : str, optional
+            The name of the file to save the plot to, by default "graph.png"
+
+        Returns
+        -------
+        Path
+            The path to the plot.
+        """        
+
+        output_path = output_folder / file_name
+
+        nx.draw_networkx(self, positions)
+
+        plt.axis("off")
+        plt.savefig(output_path)
+
+        return output_path
+
 class ColFileReadError(Exception):
     """An error occurred while reading a .col file.
     """
