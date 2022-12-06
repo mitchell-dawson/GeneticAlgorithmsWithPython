@@ -6,6 +6,8 @@ import time
 from pathlib import Path
 from typing import Any, Tuple
 
+import networkx as nx
+
 from src.genetic import (
     AbsoluteFitness,
     ChromosomeGenerator,
@@ -150,11 +152,25 @@ def main():
         "/Users/mitchell.dawson/CodeProjects/GeneticAlgorithmsWithPython/data_fixtures/raw/graph_colouring/adjacent_states.col"
     )
 
+    output_folder = Path(
+        "/Users/mitchell.dawson/CodeProjects/GeneticAlgorithmsWithPython/data/processed/graph_colouring"
+    )
+
     base_graph = NodeColouredGraph().from_col_file(col_file_path)
 
     gene_set = ["red", "blue", "green", "yellow"]
 
-    graph_colouring(base_graph, gene_set)
+    best = graph_colouring(base_graph, gene_set)
+
+    positions = nx.planar_layout(best)
+    positions = nx.spring_layout(best, pos=positions, seed=100, k=1)
+
+    colour_map = []
+
+    for node in best:
+        colour_map.append(best.nodes[node]["colour"])
+
+    best.plot(output_folder, positions=positions, colour_map=colour_map)
 
 
 if __name__ == "__main__":

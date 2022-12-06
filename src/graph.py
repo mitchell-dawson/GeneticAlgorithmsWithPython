@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, List
 
 import networkx as nx
 from matplotlib import pyplot as plt
@@ -112,7 +112,11 @@ class Graph(nx.Graph):
             )
 
     def plot(
-        self, output_folder: Path, positions, file_name: str = "graph.png"
+        self,
+        output_folder: Path,
+        positions,
+        file_name: str = "graph.png",
+        colour_map=List[str],
     ) -> Path:
         """Plot the graph.
 
@@ -131,7 +135,7 @@ class Graph(nx.Graph):
 
         output_path = output_folder / file_name
 
-        nx.draw_networkx(self, positions)
+        nx.draw_networkx(self, positions, node_color=colour_map, with_labels=True)
 
         plt.axis("off")
         plt.savefig(output_path)

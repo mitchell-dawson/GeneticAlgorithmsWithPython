@@ -119,14 +119,17 @@ class KnightAttackRunner(Runner):
 
 
 def knight_attack(
-    board: Board, max_knights: int, fitness_stagnation_limit: int = 10000
+    board: Board,
+    max_knights: int,
+    include_edges: bool = True,
+    fitness_stagnation_limit: int = 10000,
 ) -> Chromosome:
 
     target = board.total_squares  # all squares on the board attacked by a knight
 
     # create a gene set of all the positions on the board, excluding the edges
     # this is a trick to help improve performance
-    gene_set = GeneSet(tuple(board.positions(include_edges=False)))
+    gene_set = GeneSet(tuple(board.positions(include_edges=include_edges)))
 
     fitness = KnightAttackFitness()
     chromosome_generator = KnightAttackChromosomeGenerator(board)
@@ -156,11 +159,14 @@ def main():
 
     board_height, board_width = 8, 8
     max_knights = 14
-    fitness_stagnation_limit = 10000
+    include_edges = False  # use edges fo small boards, but not for large boards
+    fitness_stagnation_limit = (
+        10000  # stop after this many generations of no improvement
+    )
 
     board = Board.empty_board(board_height, board_width)
 
-    knight_attack(board, max_knights, fitness_stagnation_limit)
+    knight_attack(board, max_knights, include_edges, fitness_stagnation_limit)
 
 
 if __name__ == "__main__":
