@@ -1,19 +1,38 @@
-import os
-import random
-import sys
-import time
+from __future__ import annotations
 
-from src.genetic import (AbsoluteFitness, Chromosome, ChromosomeGenerator,
-                         GeneSet, Mutation, Runner, StoppingCriteria)
+import random
+import time
+from typing import List
+
+from src.genetic import (
+    AbsoluteFitness,
+    ChromosomeGenerator,
+    GeneSet,
+    Mutation,
+    Runner,
+    StoppingCriteria,
+)
+
+
+class Chromosome:
+    """Chromosome for the OneMax problem is a string of 1s and 0s."""
+
+    def __init__(self, genes: List[str]):
+        self.genes = genes
+
+    def __repr__(self) -> str:
+        return f"Chromosome({self.genes})"
+
+    def __eq__(self, other: Chromosome) -> bool:
+        return self.genes == other.genes
 
 
 class GuessPasswordFitness(AbsoluteFitness):
-
     def __init__(self, target: str) -> None:
         self.target = target
 
     def __call__(self, chromosome: Chromosome) -> float:
-        """Return a fitness score for the guess. The higher the score, the better the 
+        """Return a fitness score for the guess. The higher the score, the better the
         guess. The score is the sum of the number of characters in the guess that
         match the corresponding character in the target.
 
@@ -26,14 +45,16 @@ class GuessPasswordFitness(AbsoluteFitness):
         -------
         float
             The fitness score
-        """        
+        """
 
         return sum(
-            1 for expected, actual in zip(self.target, chromosome.genes) if expected == actual
+            1
+            for expected, actual in zip(self.target, chromosome.genes)
+            if expected == actual
         )
 
-class GuessPasswordMutation(Mutation):
 
+class GuessPasswordMutation(Mutation):
     def __init__(self, fitness: GuessPasswordFitness, gene_set: GeneSet):
         super().__init__(fitness, gene_set)
 
@@ -56,13 +77,12 @@ class GuessPasswordStoppingCriteria(StoppingCriteria):
         return len(self.target)
 
     def __call__(self, chromosome: Chromosome) -> bool:
-        """Return true if can stop the genetic algorithm.
-        """
+        """Return true if can stop the genetic algorithm."""
 
         return self.fitness(chromosome) >= len(self.target)
 
-class GuessPasswordChromosomeGenerator(ChromosomeGenerator):
 
+class GuessPasswordChromosomeGenerator(ChromosomeGenerator):
     def __init__(self, gene_set, length) -> None:
         self.gene_set = gene_set
         self.length = length
@@ -75,9 +95,15 @@ class GuessPasswordChromosomeGenerator(ChromosomeGenerator):
         genes = "".join(genes)
         return Chromosome(genes)
 
-class GuessPasswordRunner(Runner):
 
-    def __init__(self, chromosome_generator: ChromosomeGenerator, fitness: GuessPasswordFitness, stopping_criteria: StoppingCriteria, mutate: Mutation):
+class GuessPasswordRunner(Runner):
+    def __init__(
+        self,
+        chromosome_generator: ChromosomeGenerator,
+        fitness: GuessPasswordFitness,
+        stopping_criteria: StoppingCriteria,
+        mutate: Mutation,
+    ):
         self.chromosome_generator = chromosome_generator
         self.fitness = fitness
         self.stopping_criteria = stopping_criteria
@@ -95,11 +121,12 @@ def guess_password(target, gene_set) -> Chromosome:
     stopping_criteria = GuessPasswordStoppingCriteria(target, fitness)
     mutate = GuessPasswordMutation(fitness, gene_set)
 
-    runner = GuessPasswordRunner(chromosome_generator, fitness, stopping_criteria, mutate)
-    
+    runner = GuessPasswordRunner(
+        chromosome_generator, fitness, stopping_criteria, mutate
+    )
+
     best = runner.run()
     return best
-
 
 
 def main():

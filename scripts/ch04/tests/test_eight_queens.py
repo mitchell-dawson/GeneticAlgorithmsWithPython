@@ -1,7 +1,7 @@
 from scripts.ch04.eight_queens import eight_queens
 
 
-def test_sort_numbers():
+def test_eight_queens():
     size = 8
     best = eight_queens(size)
     
