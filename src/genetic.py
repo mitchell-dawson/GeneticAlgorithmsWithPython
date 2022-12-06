@@ -173,8 +173,12 @@ class Runner(ABC):
                     continue
             else:
                 logging.debug("Child is as fit or more fit than parent")
-                logging.info("New best chromosome found: %s", child)
-                logging.info(self.display(child))
+                logging.info(
+                    "Iteration %s - New best chromosome found: %s",
+                    iteration_num,
+                    child,
+                )
+                self.display(child)
 
             # stop if the child is good enough, otherwise repeat
             logging.debug("Checking stopping criteria...")
