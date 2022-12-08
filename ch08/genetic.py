@@ -48,19 +48,33 @@ def _mutate_custom(parent, custom_mutate, get_fitness):
     return Chromosome(childGenes, fitness)
 
 
-def get_best(get_fitness, targetLen, optimalFitness, geneSet, display,
-             custom_mutate=None, custom_create=None, maxAge=None):
+def get_best(
+    get_fitness,
+    targetLen,
+    optimalFitness,
+    geneSet,
+    display,
+    custom_mutate=None,
+    custom_create=None,
+    maxAge=None,
+):
     if custom_mutate is None:
+
         def fnMutate(parent):
             return _mutate(parent, geneSet, get_fitness)
+
     else:
+
         def fnMutate(parent):
             return _mutate_custom(parent, custom_mutate, get_fitness)
 
     if custom_create is None:
+
         def fnGenerateParent():
             return _generate_parent(targetLen, geneSet, get_fitness)
+
     else:
+
         def fnGenerateParent():
             genes = custom_create()
             return Chromosome(genes, get_fitness(genes))
@@ -78,13 +92,17 @@ def _get_improvement(new_child, generate_parent, maxAge):
     while True:
         child = new_child(parent)
         if parent.Fitness > child.Fitness:
+
+            # child is not at fit as parent
             if maxAge is None:
                 continue
+
             parent.Age += 1
             if maxAge > parent.Age:
                 continue
-            index = bisect_left(historicalFitnesses, child.Fitness, 0,
-                                len(historicalFitnesses))
+            index = bisect_left(
+                historicalFitnesses, child.Fitness, 0, len(historicalFitnesses)
+            )
             proportionSimilar = index / len(historicalFitnesses)
             if random.random() < exp(-proportionSimilar):
                 parent = child
@@ -126,6 +144,8 @@ class Benchmark:
             timings.append(seconds)
             mean = statistics.mean(timings)
             if i < 10 or i % 10 == 9:
-                print("{} {:3.2f} {:3.2f}".format(
-                    1 + i, mean,
-                    statistics.stdev(timings, mean) if i > 1 else 0))
+                print(
+                    "{} {:3.2f} {:3.2f}".format(
+                        1 + i, mean, statistics.stdev(timings, mean) if i > 1 else 0
+                    )
+                )
