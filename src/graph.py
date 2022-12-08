@@ -115,8 +115,8 @@ class Graph(nx.Graph):
         self,
         output_folder: Path,
         positions,
+        colour_map: List[str] = ["blue"],
         file_name: str = "graph.png",
-        colour_map=List[str],
     ) -> Path:
         """Plot the graph.
 
