@@ -30,7 +30,7 @@ from abc import ABC, abstractmethod
 from bisect import bisect_left
 from copy import deepcopy
 from math import exp
-from typing import Any, List, Optional, Protocol
+from typing import Any, List, Optional, Protocol, Union
 
 
 class Gene(Protocol):
@@ -41,7 +41,7 @@ class Chromosome(Protocol):
     """Chromosome for the genetic algorithm."""
 
     genes: Any
-    age: int = 0
+    age: int
 
 
 class GeneSet(Protocol):
@@ -121,115 +121,131 @@ class ChromosomeGenerator(ABC):
         """Generate a chromosome from the gene set"""
 
 
-class Runner(ABC):
-    """Class for running the genetic algorithm."""
+# class Runner(ABC):
+#     """Class for running the genetic algorithm."""
 
-    start_time: float
-    chromosome_generator: ChromosomeGenerator
-    fitness: Fitness
-    stopping_criteria: StoppingCriteria
-    mutate: Mutation
-    fitness_stagnation_detection: FitnessStagnationDetection
+#     start_time: float
+#     chromosome_generator: ChromosomeGenerator
+#     fitness: Fitness
+#     stopping_criteria: StoppingCriteria
+#     mutate: Mutation
+#     fitness_stagnation_detector: FitnessStagnationDetection
 
-    @abstractmethod
-    def display(self, candidate):
-        pass
+#     @abstractmethod
+#     def display(self, candidate):
+#         pass
 
-    def run(self, fitness_stagnation_limit: int = 10000) -> Chromosome:
-        """Run the genetic algorithm.
+#     def run(self, fitness_stagnation_limit: int = 10000) -> Chromosome:
+#         """Run the genetic algorithm.
 
-        Returns
-        -------
-        Chromosome
-            The best chromosome found
-        """
-        logging.info("Starting genetic algorithm run")
-        random.seed()
+#         Returns
+#         -------
+#         Chromosome
+#             The best chromosome found
+#         """
+#         logging.info("Starting genetic algorithm run")
+#         random.seed()
 
-        fitness_stagnation_detector = FitnessStagnationDetection(
-            self.fitness, fitness_stagnation_limit
-        )
+#         fitness_stagnation_detector = FitnessStagnationDetection(
+#             self.fitness, fitness_stagnation_limit
+#         )
 
-        self.start_time = time.time()
-        iteration_num = 0
+#         self.start_time = time.time()
+#         self.iteration_num = 0
 
-        # generate an initial chromosome
-        best_parent = self.chromosome_generator()
-        logging.info("Initial chromosome: %s", best_parent)
+#         # generate an initial chromosome
+#         best_parent = self.chromosome_generator()
+#         logging.info("Initial chromosome: %s", best_parent)
 
-        # if the initial chromosome is good enough, we're done
-        if self.stopping_criteria(best_parent):
-            logging.info("Stopping criteria met on initial chromosome")
-            return best_parent
+#         # if the initial chromosome is good enough, we're done
+#         if self.stopping_criteria(best_parent):
+#             logging.info("Stopping criteria met on initial chromosome")
+#             return best_parent
 
-        while True:  # repeat until child is as good or better than the parent
-            iteration_num += 1
-            logging.debug("Starting iteration %s", iteration_num)
+#         while True:  # repeat until child is as good or better than the parent
+#             self.iteration_num += 1
+#             logging.debug("Starting iteration %s", self.iteration_num)
 
-            logging.debug("Creating child by mutating parent...")
-            child = self.mutate(best_parent)
-            logging.debug("Child created: %s", str(child))
+#             logging.debug("Creating child by mutating parent...")
+#             child = self.mutate(best_parent)
+#             logging.debug("Child created: %s", str(child))
 
-            logging.debug("Comparing child and parent fitness...")
-            if self.fitness(best_parent) > self.fitness(child):
-                logging.debug("Child is not as fit as parent")
+#             logging.debug("Comparing child and parent fitness...")
+#             if self.fitness(best_parent) > self.fitness(child):
+#                 logging.debug("Child is not as fit as parent")
 
-                if fitness_stagnation_detector(best_parent):
-                    logging.info("Fitness stagnation detected")
-                    logging.debug("Iteration complete")
-                    logging.debug("= " * 30)
-                    return best_parent
+#                 if fitness_stagnation_detector(best_parent):
+#                     logging.info("Fitness stagnation detected")
+#                     logging.debug("Iteration complete")
+#                     logging.debug("= " * 30)
+#                     return best_parent
 
-                logging.debug("Fitness stagnation not detected")
-                logging.debug("Iteration complete")
-                logging.debug("= " * 30)
-                continue
+#                 logging.debug("Fitness stagnation not detected")
+#                 logging.debug("Iteration complete")
+#                 logging.debug("= " * 30)
+#                 continue
 
-            logging.debug("Child is as fit or more fit than parent")
-            logging.info(
-                "Iteration %s - New best chromosome found: %s",
-                iteration_num,
-                child,
-            )
-            self.display(child)
+#             logging.debug("Child is as fit or more fit than parent")
+#             logging.info(
+#                 "Iteration %s - New best chromosome found: %s",
+#                 self.iteration_num,
+#                 child,
+#             )
+#             self.display(child)
 
-            # stop if the child is good enough, otherwise repeat
-            logging.debug("Checking stopping criteria...")
-            if self.stopping_criteria(child):
-                logging.info("Stopping criteria met by child")
-                logging.debug("Iteration complete")
-                logging.debug("= " * 30)
-                return child
+#             # stop if the child is good enough, otherwise repeat
+#             logging.debug("Checking stopping criteria...")
+#             if self.stopping_criteria(child):
+#                 logging.info("Stopping criteria met by child")
+#                 logging.debug("Iteration complete")
+#                 logging.debug("= " * 30)
+#                 return child
 
-            logging.debug("Stopping criteria not met by child")
-            best_parent = child
+#             logging.debug("Stopping criteria not met by child")
+#             best_parent = child
 
-            logging.debug("Iteration complete")
-            logging.debug("= " * 30)
+#             logging.debug("Iteration complete")
+#             logging.debug("= " * 30)
 
 
 class AgeAnnealing:
-    def __init__(self, age_limit: int):
+    def __init__(self, age_limit: float = float("inf")):
         self.age_limit = age_limit
         self.historical_fitnesses: List[float] = []
 
 
-class AgeAnnealingRunner(ABC):
+class Runner(ABC):
     """Class for running the genetic algorithm."""
 
     start_time: float
-    chromosome_generator: ChromosomeGenerator
-    fitness: Fitness
-    stopping_criteria: StoppingCriteria
-    mutate: Mutation
-    fitness_stagnation_detection: FitnessStagnationDetection
-    age_annealing: AgeAnnealing
+    iteration_num: int
+    best_parent: Chromosome
+    parent: Chromosome
+    child: Chromosome
+
+    def __init__(
+        self,
+        chromosome_generator: ChromosomeGenerator,
+        fitness: Fitness,
+        stopping_criteria: StoppingCriteria,
+        mutate: Mutation,
+        age_annealing: AgeAnnealing,
+        fitness_stagnation_detector: FitnessStagnationDetector,
+    ) -> None:
+
+        self.iteration_num = 0
+        self.chromosome_generator = chromosome_generator
+        self.fitness = fitness
+        self.stopping_criteria = stopping_criteria
+        self.mutate = mutate
+        self.age_annealing = age_annealing
+        self.fitness_stagnation_detector = fitness_stagnation_detector
 
     @abstractmethod
     def display(self, candidate):
         pass
 
-    def run(self, fitness_stagnation_limit: int = 10000) -> Chromosome:
+    def run(self) -> Chromosome:
         """Run the genetic algorithm.
 
         Returns
@@ -238,150 +254,180 @@ class AgeAnnealingRunner(ABC):
             The best chromosome found
         """
         logging.info("Starting genetic algorithm run")
-        random.seed()
-
-        fitness_stagnation_detector = FitnessStagnationDetection(
-            self.fitness, fitness_stagnation_limit
-        )
-
         self.start_time = time.time()
-        iteration_num = 0
 
-        # generate an initial chromosome
-        best_parent = self.chromosome_generator()
-        logging.info("Initial chromosome: %s", best_parent)
+        self.best_parent = self.chromosome_generator()
+        logging.info("Initial chromosome: %s", self.best_parent)
 
-        # if the initial chromosome is good enough, we're done
-        if self.stopping_criteria(best_parent):
-            logging.info("Stopping criteria met on initial chromosome")
-            return best_parent
+        if self.stopping_criteria(self.best_parent):
+            raise StoppingCriteriaMet(self.best_parent, self.iteration_num)
 
         logging.debug("Adding initial chromosome fitness to historical fitnesses")
-        self.age_annealing.historical_fitnesses.append(self.fitness(best_parent))
+        self.age_annealing.historical_fitnesses.append(self.fitness(self.best_parent))
 
         logging.debug("Creating parent copy from initial chromosome")
-        parent = deepcopy(best_parent)
+        self.parent = deepcopy(self.best_parent)
 
         while True:  # repeat until child is as good or better than the parent
-            iteration_num += 1
-            logging.debug("Starting iteration %s", iteration_num)
 
-            logging.debug("Creating child by mutating parent...")
-            child = self.mutate(parent)
-            logging.debug("Child created: %s", str(child))
+            self.iteration_num += 1
+            logging.debug("Starting iteration %s", self.iteration_num)
 
-            logging.debug("Comparing child and parent fitness...")
-            if self.fitness(parent) > self.fitness(child):
-                logging.debug("Child is not as fit as parent")
-
-                logging.debug("Checking fitness stagnation...")
-                if fitness_stagnation_detector(best_parent):
-                    logging.info("Fitness stagnation detected")
-                    logging.debug("Iteration complete")
-                    logging.debug("= " * 30)
-                    return best_parent
-
-                logging.debug("Fitness stagnation not detected")
-
-                logging.debug("Checking age annealing...")
-                if not self.age_annealing.age_limit:
-                    logging.debug("No age limit set, skipping age annealing")
-                    logging.debug("Iteration complete")
-                    logging.debug("= " * 30)
-                    continue
-
-                logging.debug("Incrementing parent age")
-                parent.age += 1
-                logging.debug("Parent age: %s", parent.age)
-
-                logging.debug(
-                    "Comparing parent age to age annealing limit (%s)...",
-                    self.age_annealing.age_limit,
-                )
-                if parent.age < self.age_annealing.age_limit:
-                    logging.debug("Parent age below limit, skipping age annealing")
-                    logging.debug("Iteration complete")
-                    logging.debug("= " * 30)
-                    continue
-
-                logging.debug("Parent age above limit, considering age annealing...")
-                index = bisect_left(
-                    self.age_annealing.historical_fitnesses,
-                    self.fitness(child),
-                    0,
-                    len(self.age_annealing.historical_fitnesses),
-                )
-
-                proportion_similar = index / len(
-                    self.age_annealing.historical_fitnesses
-                )
-                logging.debug(
-                    "Proportion of historical fitnesses similar to child: %s",
-                    proportion_similar,
-                )
-
-                if random.random() < exp(-proportion_similar):
-                    logging.debug("Annealing not chosen, skipping age annealing")
-                    parent = child
-                    logging.debug("Iteration complete")
-                    logging.debug("= " * 30)
-                    continue
-
-                logging.debug("Annealing chosen, resetting parent to best parent")
-                best_parent.age = 0
-                parent = best_parent
-
-            if self.fitness(parent) == self.fitness(child):
-                logging.debug("Child is as fit as parent")
-                child.age = parent.age + 1
-                parent = deepcopy(child)
-                logging.debug("Iteration complete")
-                logging.debug("= " * 30)
+            try:
+                self.main_loop()
+            except FitnessStagnationDetected as exception:
+                return exception.chromosome
+            except StoppingCriteriaMet as exception:
+                return exception.chromosome
+            except ContinueLoop:
                 continue
 
-            logging.debug("Child more fit than parent")
-            child.age = 0
-            parent = child
+    def main_loop(self):
 
-            logging.debug("Comparing child to best parent...")
-            if self.fitness(best_parent) < self.fitness(child):
-                logging.debug("Child is more fit than best parent")
-                best_parent = child
-                self.age_annealing.historical_fitnesses.append(
-                    self.fitness(best_parent)
-                )
+        self.create_child()
+        self.compare_parent_and_child()
+        self.compare_best_parent_and_child()
+        self.check_stopping_criteria()
 
-            logging.debug("Best parent is as fit or more fit than child")
-            logging.info(
-                "Iteration %s - New best chromosome found: %s",
-                iteration_num,
-                best_parent,
+        self.best_parent = self.child
+        logging.debug("Iteration complete")
+        logging.debug("= " * 30)
+
+    def compare_best_parent_and_child(self):
+
+        logging.debug("Comparing child to best parent...")
+        if self.fitness(self.best_parent) < self.fitness(self.child):
+            logging.debug("Child is more fit than best parent")
+            self.best_parent = self.child
+            self.age_annealing.historical_fitnesses.append(
+                self.fitness(self.best_parent)
             )
-            self.display(child)
 
-            # stop if the child is good enough, otherwise repeat
-            logging.debug("Checking stopping criteria...")
-            if self.stopping_criteria(child):
-                logging.info("Stopping criteria met by child")
-                logging.debug("Iteration complete")
-                logging.debug("= " * 30)
-                return child
+        logging.debug("Best parent is as fit or more fit than child")
+        logging.info(
+            "Iteration %s - New best chromosome found: %s",
+            self.iteration_num,
+            self.best_parent,
+        )
+        self.display(self.child)
 
-            logging.debug("Stopping criteria not met by child")
-            best_parent = child
+    def compare_parent_and_child(self):
+        logging.debug("Comparing child and parent fitness...")
+        if self.fitness(self.parent) > self.fitness(self.child):
+            logging.debug("Child is not as fit as parent")
+            self.detect_fitness_stagnation()
+            self.run_age_annealing()
 
-            logging.debug("Iteration complete")
-            logging.debug("= " * 30)
+        if self.fitness(self.parent) == self.fitness(self.child):
+            self.child.age = self.parent.age + 1
+            self.parent = deepcopy(self.child)
+            raise ContinueLoop("Child is as fit as parent")
+
+        logging.debug("Child is more fit than parent")
+        self.child.age = 0
+        self.parent = deepcopy(self.child)
+
+    def check_stopping_criteria(self):
+
+        logging.debug("Checking stopping criteria...")
+        if self.stopping_criteria(self.child):
+            raise StoppingCriteriaMet(self.child, self.iteration_num)
+        logging.debug("Stopping criteria not met by child")
+
+    def create_child(self):
+        logging.debug("Creating child by mutating parent...")
+        self.child = self.mutate(self.parent)
+        logging.debug("Child created: %s", str(self.child))
+
+    def detect_fitness_stagnation(self):
+        logging.debug("Checking fitness stagnation...")
+        if self.fitness_stagnation_detector(self.best_parent):
+            raise FitnessStagnationDetected(self.best_parent, self.iteration_num)
+        logging.debug("Fitness stagnation not detected")
+
+    def run_age_annealing(self):
+
+        logging.debug("Checking age annealing...")
+        if not self.age_annealing.age_limit:
+            raise ContinueLoop("No age limit set, skipping age annealing")
+
+        logging.debug("Incrementing parent age")
+        self.parent.age += 1
+        logging.debug("Parent age: %s", self.parent.age)
+
+        logging.debug(
+            "Comparing parent age to age annealing limit (%s)...",
+            self.age_annealing.age_limit,
+        )
+        if self.parent.age < self.age_annealing.age_limit:
+            raise ContinueLoop("Parent age below limit, skipping age annealing")
+
+        logging.debug("Parent age above limit, considering age annealing...")
+        index = bisect_left(
+            self.age_annealing.historical_fitnesses,
+            self.fitness(self.child),
+            0,
+            len(self.age_annealing.historical_fitnesses),
+        )
+
+        proportion_similar = index / len(self.age_annealing.historical_fitnesses)
+        logging.debug(
+            "Proportion of historical fitnesses similar to child: %s",
+            proportion_similar,
+        )
+
+        if random.random() < exp(-proportion_similar):
+            self.parent = self.child
+            raise ContinueLoop("Annealing not chosen, skipping age annealing")
+
+        logging.debug("Annealing chosen, resetting parent to best parent")
+        self.best_parent.age = 0
+        self.parent = self.best_parent
 
 
-class FitnessStagnationDetection(StoppingCriteria):
+class StoppingCriteriaMet(Exception):
+    def __init__(self, chromosome: Chromosome, iteration_num: int):
+        self.chromosome = chromosome
+        self.iteration_num = iteration_num
+        logging.info(
+            "Stopping criteria met by chromosome %s on iteration %d",
+            chromosome,
+            iteration_num,
+        )
+        logging.debug("Iteration complete")
+        logging.debug("= " * 30)
+
+
+class FitnessStagnationDetected(Exception):
+    """Exception raised when fitness stagnation is detected."""
+
+    def __init__(self, chromosome: Chromosome, iteration_num: int):
+        self.chromosome = chromosome
+        self.iteration_num = iteration_num
+        logging.info("Fitness stagnation detected")
+        logging.debug("Iteration complete")
+        logging.debug("= " * 30)
+
+
+class ContinueLoop(Exception):
+    """Exception raised to continue the loop."""
+
+    def __init__(self, message):
+        logging.debug(message)
+        logging.debug("Iteration complete")
+        logging.debug("= " * 30)
+
+
+class FitnessStagnationDetector(StoppingCriteria):
     """Stop the genetic algorithm if the fitness has not improved in the
     last 10 generations.
     """
 
-    def __init__(self, fitness: Fitness, generations: int = 10):
+    def __init__(
+        self, fitness: Fitness, generations_limit: Union[float, int] = float("inf")
+    ):
         self.fitness = fitness
-        self.generations = generations
+        self.generations_limit = generations_limit
         self.last_fitness = None
         self.last_generation = 0
 
@@ -402,10 +448,10 @@ class FitnessStagnationDetection(StoppingCriteria):
 
         self.last_generation += 1
 
-        if self.last_generation >= self.generations:
+        if self.last_generation >= self.generations_limit:
             logging.info(
                 "FitnessStagnationDetection: %s generations without improvement",
                 self.last_generation,
             )
 
-        return self.last_generation >= self.generations
+        return self.last_generation >= self.generations_limit
