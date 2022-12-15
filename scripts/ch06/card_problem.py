@@ -10,13 +10,17 @@ from __future__ import annotations
 import logging
 import random
 import time
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, List, Tuple, Type
 
 import numpy as np
 
 from src.genetic import (
+    AgeAnnealing,
+    Chromosome,
     ChromosomeGenerator,
+    FitnessStagnationDetector,
     GeneSet,
     Mutation,
     RelativeFitness,
@@ -25,20 +29,30 @@ from src.genetic import (
 )
 
 
-class Chromosome(List[int]):
+class CardProblemChromosome(Chromosome):
     """Chromosome for the card problem."""
+
+    def __init__(self, genes: List[int], age: int = 0):
+        self.genes = genes
+        self.age = age
+
+    def __str__(self) -> str:
+        return f"{self.genes}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     @property
     def left_group(self) -> List[int]:
-        return self[:5]
+        return self.genes[:5]
 
     @property
     def right_group(self) -> List[int]:
-        return self[5:]
+        return self.genes[5:]
 
     @property
     def num_duplicates(self) -> int:
-        return len(self) - len(set(self))
+        return len(self.genes) - len(set(self.genes))
 
 
 class CardProblemFitness(RelativeFitness):
@@ -48,7 +62,7 @@ class CardProblemFitness(RelativeFitness):
     360.
     """
 
-    def __init__(self, chromosome: Chromosome) -> None:
+    def __init__(self, chromosome: CardProblemChromosome) -> None:
         self.chromosome = chromosome
 
     def __gt__(self, other: CardProblemFitness) -> bool:
@@ -74,7 +88,7 @@ class CardProblemFitness(RelativeFitness):
         int
             The number of duplicates in the list of cards.
         """
-        return len(self.chromosome) - len(set(self.chromosome))
+        return len(self.chromosome.genes) - len(set(self.chromosome.genes))
 
     def sum_of_cards_fitness(self, target: int = 36) -> int:
         """Return the fitness of some cards from the chromosome. The fitness is the
@@ -115,22 +129,25 @@ class CardProblemMutation(Mutation):
     def __init__(self, fitness: CardProblemFitness, gene_set: GeneSet):
         super().__init__(fitness, gene_set)
 
-    def __call__(self, parent: Chromosome) -> Chromosome:
+    def __call__(self, parent: CardProblemChromosome) -> CardProblemChromosome:
 
-        child = parent.copy()
+        child = deepcopy(parent)
 
-        if len(child) == len(set(child)):
+        if len(child.genes) == len(set(child.genes)):
             count = random.randint(1, 4)
             while count > 0:
                 count -= 1
-                indexA, indexB = random.sample(range(len(child)), 2)
-                child[indexA], child[indexB] = child[indexB], child[indexA]
+                indexA, indexB = random.sample(range(len(child.genes)), 2)
+                child.genes[indexA], child.genes[indexB] = (
+                    child.genes[indexB],
+                    child.genes[indexA],
+                )
         else:
-            indexA = random.randrange(0, len(child))
+            indexA = random.randrange(0, len(child.genes))
             indexB = random.randrange(0, len(self.gene_set))
-            child[indexA] = child[indexB]
+            child.genes[indexA] = child.genes[indexB]
 
-        return Chromosome(child)
+        return CardProblemChromosome(child.genes, age=0)
 
 
 class CardProblemStoppingCriteria(StoppingCriteria):
@@ -138,7 +155,7 @@ class CardProblemStoppingCriteria(StoppingCriteria):
         self.target = target
         self.fitness = fitness
 
-    def __call__(self, chromosome: Chromosome) -> bool:
+    def __call__(self, chromosome: CardProblemChromosome) -> bool:
         """Return true if can stop the genetic algorithm."""
 
         return (self.fitness(chromosome).total_difference() == 0) and (
@@ -150,8 +167,8 @@ class CardProblemChromosomeGenerator(ChromosomeGenerator):
     def __init__(self, gene_set) -> None:
         self.gene_set = gene_set
 
-    def __call__(self) -> Chromosome:
-        return Chromosome(self.gene_set)
+    def __call__(self) -> CardProblemChromosome:
+        return CardProblemChromosome(self.gene_set, age=0)
 
 
 class CardProblemRunner(Runner):
@@ -161,11 +178,17 @@ class CardProblemRunner(Runner):
         fitness: Type[CardProblemFitness],
         stopping_criteria: StoppingCriteria,
         mutate: Mutation,
-    ):
-        self.chromosome_generator = chromosome_generator
-        self.fitness = fitness
-        self.stopping_criteria = stopping_criteria
-        self.mutate = mutate
+        age_annealing: AgeAnnealing,
+        fitness_stagnation_detector: FitnessStagnationDetector,
+    ) -> None:
+        super().__init__(
+            chromosome_generator,
+            fitness,
+            stopping_criteria,
+            mutate,
+            age_annealing,
+            fitness_stagnation_detector,
+        )
 
     def display(self, candidate):
         time_diff = time.time() - self.start_time
@@ -179,16 +202,31 @@ class CardProblemRunner(Runner):
         logging.debug("time=%f", time_diff)
 
 
-def card_problem(gene_set: Tuple[int]) -> Chromosome:
+def card_problem(
+    gene_set: Tuple[int],
+    fitness_stagnation_limit: Union[float, int] = float("inf"),
+    age_limit: float = float("inf"),
+) -> CardProblemChromosome:
 
     target = 0  # no duplicates, sum of left cards = 36, product of right cards = 360
 
     fitness = CardProblemFitness
     chromosome_generator = CardProblemChromosomeGenerator(gene_set)
     stopping_criteria = CardProblemStoppingCriteria(target, fitness)
-    mutate = CardProblemMutation(fitness, gene_set)
+    mutation = CardProblemMutation(fitness, gene_set)
+    age_annealing = AgeAnnealing(age_limit=age_limit)
 
-    runner = CardProblemRunner(chromosome_generator, fitness, stopping_criteria, mutate)
+    fitness_stagnation_detector = FitnessStagnationDetector(
+        fitness, fitness_stagnation_limit
+    )
+    runner = CardProblemRunner(
+        chromosome_generator,
+        fitness,
+        stopping_criteria,
+        mutation,
+        age_annealing,
+        fitness_stagnation_detector,
+    )
 
     best = runner.run()
     print(best)
