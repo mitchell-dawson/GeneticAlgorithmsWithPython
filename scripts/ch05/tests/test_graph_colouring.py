@@ -7,6 +7,7 @@ from scripts.ch05.graph_colouring import (
     GraphColoringChromosomeGenerator,
     GraphColoringFitness,
     GraphColoringMutation,
+    GraphColouringChromosome,
     graph_colouring,
 )
 from src.graph import NodeColouredGraph
@@ -33,7 +34,7 @@ def test_call_GraphColoringFitness():
     graph.add_edge(3, 4)
     graph.add_edge(4, 5)
 
-    assert fitness(graph) == -2
+    assert fitness(GraphColouringChromosome(graph)) == -2
 
 
 def test_call_GraphColoringMutation():
@@ -50,10 +51,11 @@ def test_call_GraphColoringMutation():
     parent.add_node(2, colour="red")
     parent.add_node(3, colour="blue")
 
+    parent = GraphColouringChromosome(parent)
     child = mutation(parent)
 
-    assert child.colour_dict == {1: "green", 2: "red", 3: "blue"}
-    assert parent.colour_dict == {1: "red", 2: "red", 3: "blue"}
+    assert child.genes.colour_dict == {1: "green", 2: "red", 3: "blue"}
+    assert parent.genes.colour_dict == {1: "red", 2: "red", 3: "blue"}
 
 
 def test_call_GraphColoringChromosomeGenerator():
@@ -73,7 +75,7 @@ def test_call_GraphColoringChromosomeGenerator():
 
     chromosome = generator()
 
-    assert chromosome.colour_dict == {
+    assert chromosome.genes.colour_dict == {
         1: "red",
         2: "green",
         3: "red",
@@ -86,5 +88,5 @@ def test_graph_colouring(simple_col_file):
     gene_set = ["red", "blue", "green", "yellow"]
     best = graph_colouring(base_graph, gene_set)
 
-    assert set(best.colour_dict.values()) == set(gene_set)
-    assert best.colour_dict["4"] == best.colour_dict["5"]
+    assert set(best.genes.colour_dict.values()) == set(gene_set)
+    assert best.genes.colour_dict["4"] == best.genes.colour_dict["5"]
