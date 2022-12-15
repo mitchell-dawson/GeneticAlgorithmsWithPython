@@ -15,11 +15,14 @@ from __future__ import annotations
 import logging
 import random
 import time
-from typing import List
+from typing import List, Union
 
 from src.genetic import (
     AbsoluteFitness,
+    AgeAnnealing,
+    Chromosome,
     ChromosomeGenerator,
+    FitnessStagnationDetector,
     GeneSet,
     Mutation,
     Runner,
@@ -27,16 +30,20 @@ from src.genetic import (
 )
 
 
-class Chromosome:
+class EightQueensChromosome(Chromosome):
     """Chromosome for the OneMax problem is a string of 1s and 0s."""
 
-    def __init__(self, genes: List[int]):
+    def __init__(self, genes: List[int], age: int = 0):
         self.genes = genes
+        self.age = age
+
+    def __str__(self) -> str:
+        return f"Chromosome({self.genes}, age={self.age})"
 
     def __repr__(self) -> str:
-        return f"Chromosome({self.genes})"
+        return f"Chromosome({self.genes}, age={self.age})"
 
-    def __eq__(self, other: Chromosome) -> bool:
+    def __eq__(self, other: EightQueensChromosome) -> bool:
         return self.genes == other.genes
 
 
@@ -63,13 +70,13 @@ class EightQueensFitness(AbsoluteFitness):
     def __init__(self, size: int):
         self.size = size
 
-    def __call__(self, chromosome: Chromosome) -> float:
+    def __call__(self, chromosome: EightQueensChromosome) -> float:
         """Return a fitness score for the queen positions. The score is the
         number of pairs of queens that are attacking each other.
 
         Parameters
         ----------
-        chromosome : Chromosome
+        chromosome : EightQueensChromosome
             The chromosome to evaluate
 
         Returns
@@ -112,19 +119,19 @@ class EightQueensMutation(Mutation):
     def __init__(self, fitness: EightQueensFitness, gene_set: GeneSet):
         super().__init__(fitness, gene_set)
 
-    def __call__(self, parent: Chromosome) -> Chromosome:
+    def __call__(self, parent: EightQueensChromosome) -> EightQueensChromosome:
         """Mutate a chromosome by swapping the value of a chromosome's gene with
         another random gene from the gene set. Mutation in this case is the
         changing of a row or column position of a single queen.
 
         Parameters
         ----------
-        parent : Chromosome
+        parent : EightQueensChromosome
             The chromosome to mutate.
 
         Returns
         -------
-        Chromosome
+        EightQueensChromosome
             the mutated chromosome
         """
 
@@ -133,7 +140,7 @@ class EightQueensMutation(Mutation):
         new_gene, alternate = random.sample(self.gene_set, 2)
         child_genes[index] = alternate if new_gene == child_genes[index] else new_gene
 
-        return Chromosome(child_genes)
+        return EightQueensChromosome(child_genes)
 
 
 class EightQueensStoppingCriteria(StoppingCriteria):
@@ -141,7 +148,7 @@ class EightQueensStoppingCriteria(StoppingCriteria):
         self.target = target
         self.fitness = fitness
 
-    def __call__(self, chromosome: Chromosome) -> bool:
+    def __call__(self, chromosome: EightQueensChromosome) -> bool:
         """Return true if can stop the genetic algorithm."""
 
         return self.fitness(chromosome) >= self.target
@@ -152,7 +159,7 @@ class EightQueensChromosomeGenerator(ChromosomeGenerator):
         self.gene_set = gene_set
         self.length = length
 
-    def __call__(self) -> Chromosome:
+    def __call__(self) -> EightQueensChromosome:
         """Generate a chromosome from the gene set
 
         In this task a chromosome is a list of numbers that represent the
@@ -164,7 +171,7 @@ class EightQueensChromosomeGenerator(ChromosomeGenerator):
         while len(genes) < self.length:
             sampleSize = min(self.length - len(genes), len(self.gene_set))
             genes.extend(random.sample(self.gene_set, sampleSize))
-        return Chromosome(genes)
+        return EightQueensChromosome(genes)
 
 
 class EightQueensRunner(Runner):
@@ -174,15 +181,21 @@ class EightQueensRunner(Runner):
         fitness: EightQueensFitness,
         stopping_criteria: StoppingCriteria,
         mutate: Mutation,
+        age_annealing: AgeAnnealing,
+        fitness_stagnation_detector: FitnessStagnationDetector,
         size: int,
     ):
-        self.chromosome_generator = chromosome_generator
-        self.fitness = fitness
-        self.stopping_criteria = stopping_criteria
-        self.mutate = mutate
+        super().__init__(
+            chromosome_generator,
+            fitness,
+            stopping_criteria,
+            mutate,
+            age_annealing,
+            fitness_stagnation_detector,
+        )
         self.size = size
 
-    def display(self, candidate: Chromosome):
+    def display(self, candidate: EightQueensChromosome):
         time_diff = time.time() - self.start_time
 
         board = Board(candidate.genes, self.size)
@@ -190,7 +203,11 @@ class EightQueensRunner(Runner):
         return f"time = {time_diff}"
 
 
-def eight_queens(size: int) -> Chromosome:
+def eight_queens(
+    size: int,
+    fitness_stagnation_limit: Union[float, int] = float("inf"),
+    age_limit: float = float("inf"),
+) -> EightQueensChromosome:
     """Run the genetic algorithm to find the solution for the eight queens problem.
 
     Parameters
@@ -200,7 +217,7 @@ def eight_queens(size: int) -> Chromosome:
 
     Returns
     -------
-    Chromosome
+    EightQueensChromosome
         The chromosome with the solution. The genes of the chromosome are the
         positions of the queens in the board. For a board of size nxn, the chromosome
         will have 2n genes of the form [row1, col1, row2, col2, ..., rown, coln]
@@ -216,9 +233,20 @@ def eight_queens(size: int) -> Chromosome:
     chromosome_generator = EightQueensChromosomeGenerator(gene_set, 2 * size)
     stopping_criteria = EightQueensStoppingCriteria(target, fitness)
     mutate = EightQueensMutation(fitness, gene_set)
+    age_annealing = AgeAnnealing(age_limit=age_limit)
+
+    fitness_stagnation_detector = FitnessStagnationDetector(
+        fitness, fitness_stagnation_limit
+    )
 
     runner = EightQueensRunner(
-        chromosome_generator, fitness, stopping_criteria, mutate, size
+        chromosome_generator,
+        fitness,
+        stopping_criteria,
+        mutate,
+        age_annealing,
+        fitness_stagnation_detector,
+        size,
     )
 
     best = runner.run()
