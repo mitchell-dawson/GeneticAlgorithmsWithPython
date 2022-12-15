@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import random
 import time
-from typing import List, Type
+from typing import List, Type, Union
 
 import numpy as np
 
 from src.genetic import (
+    AgeAnnealing,
+    Chromosome,
     ChromosomeGenerator,
+    FitnessStagnationDetector,
     GeneSet,
     Mutation,
     RelativeFitness,
@@ -16,14 +19,18 @@ from src.genetic import (
 )
 
 
-class Chromosome:
+class SortNumbersChromosome(Chromosome):
     """Chromosome for the sort numbers problem is a list of numbers."""
 
-    def __init__(self, genes: List[int]):
+    def __init__(self, genes: List[int], age: int = 0):
         self.genes = genes
+        self.age = age
+
+    def __str__(self) -> str:
+        return f"Chromosome({self.genes}, age={self.age})"
 
     def __repr__(self) -> str:
-        return f"Chromosome({self.genes})"
+        return f"Chromosome({self.genes}, age={self.age})"
 
     def __eq__(self, other: Chromosome) -> bool:
         return self.genes == other.genes
@@ -32,7 +39,7 @@ class Chromosome:
 class SortNumbersFitness(RelativeFitness):
     """Fitness function of a chromosome for the sort numbers problem."""
 
-    def __init__(self, chromosome: Chromosome) -> None:
+    def __init__(self, chromosome: SortNumbersChromosome) -> None:
         self.chromosome = chromosome
 
     def __gt__(self, other: SortNumbersFitness) -> bool:
@@ -46,6 +53,14 @@ class SortNumbersFitness(RelativeFitness):
         )
 
     def total_size_of_gaps_in_sequence(self) -> float:
+        """Return the total size of the gaps in the sequence.
+
+        Returns
+        -------
+        float
+            The total size of the gaps in the sequence
+        """
+
         return sum(
             [
                 np.abs(self.chromosome.genes[ii] - self.chromosome.genes[ii - 1])
@@ -54,6 +69,14 @@ class SortNumbersFitness(RelativeFitness):
         )
 
     def numbers_in_sequence_count(self) -> float:
+        """Return the number of numbers in sequence.
+
+        Returns
+        -------
+        float
+            The number of numbers in sequence
+        """
+
         return len(
             [
                 ii
@@ -78,7 +101,7 @@ class SortNumbersMutation(Mutation):
         child_genes[0] = min(self.gene_set)
         child_genes[-1] = max(self.gene_set)
 
-        return Chromosome(child_genes)
+        return SortNumbersChromosome(child_genes)
 
 
 class SortNumbersStoppingCriteria(StoppingCriteria):
@@ -86,7 +109,7 @@ class SortNumbersStoppingCriteria(StoppingCriteria):
         self.target = target
         self.fitness = fitness
 
-    def __call__(self, chromosome: Chromosome) -> bool:
+    def __call__(self, chromosome: SortNumbersChromosome) -> bool:
         """Return true if can stop the genetic algorithm."""
 
         return self.fitness(chromosome).numbers_in_sequence_count() >= self.target
@@ -97,12 +120,12 @@ class SortNumbersChromosomeGenerator(ChromosomeGenerator):
         self.gene_set = gene_set
         self.length = length
 
-    def __call__(self) -> Chromosome:
+    def __call__(self) -> SortNumbersChromosome:
         genes = []
         while len(genes) < self.length:
             sampleSize = min(self.length - len(genes), len(self.gene_set))
             genes.extend(random.sample(self.gene_set, sampleSize))
-        return Chromosome(genes)
+        return SortNumbersChromosome(genes)
 
 
 class SortNumbersRunner(Runner):
@@ -112,11 +135,17 @@ class SortNumbersRunner(Runner):
         fitness: Type[SortNumbersFitness],
         stopping_criteria: StoppingCriteria,
         mutate: Mutation,
+        age_annealing: AgeAnnealing,
+        fitness_stagnation_detector: FitnessStagnationDetector,
     ):
-        self.chromosome_generator = chromosome_generator
-        self.fitness = fitness
-        self.stopping_criteria = stopping_criteria
-        self.mutate = mutate
+        super().__init__(
+            chromosome_generator,
+            fitness,
+            stopping_criteria,
+            mutate,
+            age_annealing,
+            fitness_stagnation_detector,
+        )
 
     def display(self, candidate):
         timeDiff = time.time() - self.start_time
@@ -136,7 +165,11 @@ class SortNumbersRunner(Runner):
         )
 
 
-def sort_numbers(length) -> Chromosome:
+def sort_numbers(
+    length,
+    fitness_stagnation_limit: Union[float, int] = float("inf"),
+    age_limit: float = float("inf"),
+) -> SortNumbersChromosome:
 
     target = length - 1
 
@@ -146,8 +179,20 @@ def sort_numbers(length) -> Chromosome:
     chromosome_generator = SortNumbersChromosomeGenerator(gene_set, length)
     stopping_criteria = SortNumbersStoppingCriteria(target, fitness)
     mutate = SortNumbersMutation(fitness, gene_set)
+    age_annealing = AgeAnnealing(age_limit=age_limit)
 
-    runner = SortNumbersRunner(chromosome_generator, fitness, stopping_criteria, mutate)
+    fitness_stagnation_detector = FitnessStagnationDetector(
+        fitness, fitness_stagnation_limit
+    )
+
+    runner = SortNumbersRunner(
+        chromosome_generator,
+        fitness,
+        stopping_criteria,
+        mutate,
+        age_annealing,
+        fitness_stagnation_detector,
+    )
 
     best = runner.run()
     return best
