@@ -43,6 +43,14 @@ class Chromosome(Protocol):
     genes: Any
     age: int
 
+    @abstractmethod
+    def __str__(self) -> str:
+        """Return a string representation of the chromosome."""
+
+    @abstractmethod
+    def __repr__(self) -> str:
+        """Return a string representation of the chromosome."""
+
 
 class GeneSet(Protocol):
     """Gene set for the genetic algorithm."""
@@ -209,6 +217,10 @@ class ChromosomeGenerator(ABC):
 
 
 class AgeAnnealing:
+    """Class for annealing the genetic algorithm process based on a chromosomes age.
+    Annealing is done by reducing the mutation rate as the chromosome ages.
+    """
+
     def __init__(self, age_limit: float = float("inf")):
         self.age_limit = age_limit
         self.historical_fitnesses: List[float] = []
@@ -243,7 +255,7 @@ class Runner(ABC):
 
     @abstractmethod
     def display(self, candidate):
-        pass
+        """Display the candidate in a runner specific way"""
 
     def run(self) -> Chromosome:
         """Run the genetic algorithm.
@@ -283,7 +295,7 @@ class Runner(ABC):
                 continue
 
     def main_loop(self):
-
+        """Main loop for the genetic algorithm."""
         self.create_child()
         self.compare_parent_and_child()
         self.compare_best_parent_and_child()
@@ -294,6 +306,7 @@ class Runner(ABC):
         logging.debug("= " * 30)
 
     def compare_best_parent_and_child(self):
+        """Compare the best parent and child fitnesses."""
 
         logging.debug("Comparing child to best parent...")
         if self.fitness(self.best_parent) < self.fitness(self.child):
@@ -312,6 +325,8 @@ class Runner(ABC):
         self.display(self.child)
 
     def compare_parent_and_child(self):
+        """Compare the parent and child fitnesses."""
+
         logging.debug("Comparing child and parent fitness...")
         if self.fitness(self.parent) > self.fitness(self.child):
             logging.debug("Child is not as fit as parent")
@@ -328,6 +343,7 @@ class Runner(ABC):
         self.parent = deepcopy(self.child)
 
     def check_stopping_criteria(self):
+        """Check if the stopping criteria has been met."""
 
         logging.debug("Checking stopping criteria...")
         if self.stopping_criteria(self.child):
@@ -335,17 +351,22 @@ class Runner(ABC):
         logging.debug("Stopping criteria not met by child")
 
     def create_child(self):
+        """Create a child by mutating the parent."""
+
         logging.debug("Creating child by mutating parent...")
         self.child = self.mutate(self.parent)
         logging.debug("Child created: %s", str(self.child))
 
     def detect_fitness_stagnation(self):
+        """Detect fitness stagnation."""
+
         logging.debug("Checking fitness stagnation...")
         if self.fitness_stagnation_detector(self.best_parent):
             raise FitnessStagnationDetected(self.best_parent, self.iteration_num)
         logging.debug("Fitness stagnation not detected")
 
     def run_age_annealing(self):
+        """Run age annealing."""
 
         logging.debug("Checking age annealing...")
         if not self.age_annealing.age_limit:
@@ -386,6 +407,8 @@ class Runner(ABC):
 
 
 class StoppingCriteriaMet(Exception):
+    """Exception raised when stopping criteria is met."""
+
     def __init__(self, chromosome: Chromosome, iteration_num: int):
         self.chromosome = chromosome
         self.iteration_num = iteration_num
