@@ -3,10 +3,14 @@ from __future__ import annotations
 import logging
 import random
 import time
+from typing import Union
 
 from src.genetic import (
     AbsoluteFitness,
+    AgeAnnealing,
+    Chromosome,
     ChromosomeGenerator,
+    FitnessStagnationDetector,
     GeneSet,
     Mutation,
     Runner,
@@ -14,21 +18,25 @@ from src.genetic import (
 )
 
 
-class Chromosome:
+class OneMaxChromosome(Chromosome):
     """Chromosome for the OneMax problem is a string of 1s and 0s."""
 
-    def __init__(self, genes: str):
+    def __init__(self, genes: str, age: int = 0):
         self.genes = genes
+        self.age = age
+
+    def __str__(self) -> str:
+        return f"Chromosome({self.genes}, age={self.age})"
 
     def __repr__(self) -> str:
-        return f"Chromosome({self.genes})"
+        return f"Chromosome({self.genes}, age={self.age})"
 
-    def __eq__(self, other: Chromosome) -> bool:
+    def __eq__(self, other: OneMaxChromosome) -> bool:
         return self.genes == other.genes
 
 
 class OneMaxFitness(AbsoluteFitness):
-    def __call__(self, chromosome: Chromosome) -> float:
+    def __call__(self, chromosome: OneMaxChromosome) -> float:
         logging.debug("Calculating fitness for %s", chromosome)
         fitness = chromosome.genes.count("1")
         logging.debug("%s has fitness %.1f", chromosome, fitness)
@@ -53,7 +61,7 @@ class OneMaxMutation(Mutation):
 
         child_genes[index] = alternate if new_gene == child_genes[index] else new_gene
         genes = "".join([str(X) for X in child_genes])
-        chromosome = Chromosome(genes)
+        chromosome = OneMaxChromosome(genes)
         logging.debug("Mutated child created: %s", chromosome)
 
         logging.debug("Mutation complete")
@@ -71,7 +79,7 @@ class OneMaxStoppingCriteria(StoppingCriteria):
     def optimal_fitness(self) -> float:
         return self.target
 
-    def __call__(self, chromosome: Chromosome) -> bool:
+    def __call__(self, chromosome: OneMaxChromosome) -> bool:
         return self.fitness(chromosome) >= self.target
 
 
@@ -80,45 +88,65 @@ class OneMaxChromosomeGenerator(ChromosomeGenerator):
         self.gene_set = gene_set
         self.length = length
 
-    def __call__(self) -> Chromosome:
+    def __call__(self) -> OneMaxChromosome:
         genes = []
+
         while len(genes) < self.length:
             sampleSize = min(self.length - len(genes), len(self.gene_set))
             genes.extend(random.sample(self.gene_set, sampleSize))
         genes = "".join([str(X) for X in genes])
-        return Chromosome(genes)
+        return OneMaxChromosome(genes)
 
 
 class OneMaxRunner(Runner):
+    """Runner for the OneMax problem."""
+
     def __init__(
         self,
         chromosome_generator: ChromosomeGenerator,
-        fitness: AbsoluteFitness,
+        fitness: OneMaxFitness,
         stopping_criteria: StoppingCriteria,
         mutate: Mutation,
-    ):
-        self.chromosome_generator = chromosome_generator
-        self.fitness = fitness
-        self.stopping_criteria = stopping_criteria
-        self.mutate = mutate
+        age_annealing: AgeAnnealing,
+        fitness_stagnation_detector: FitnessStagnationDetector,
+    ) -> None:
+        super().__init__(
+            chromosome_generator,
+            fitness,
+            stopping_criteria,
+            mutate,
+            age_annealing,
+            fitness_stagnation_detector,
+        )
 
-    def display(self, candidate: Chromosome):
+    def display(self, candidate: OneMaxChromosome):
         time_diff = time.time() - self.start_time
         return f"time = {time_diff}"
 
 
-def one_max(target, gene_set):
+def one_max(
+    target,
+    gene_set,
+    fitness_stagnation_limit: Union[float, int] = float("inf"),
+    age_limit: float = float("inf"),
+):
 
     fitness = OneMaxFitness()
     chromosome_generator = OneMaxChromosomeGenerator(gene_set, target)
     stopping_criteria = OneMaxStoppingCriteria(target, fitness)
     mutation = OneMaxMutation(fitness, gene_set)
+    age_annealing = AgeAnnealing(age_limit=age_limit)
 
+    fitness_stagnation_detector = FitnessStagnationDetector(
+        fitness, fitness_stagnation_limit
+    )
     runner = OneMaxRunner(
         chromosome_generator,
         fitness,
         stopping_criteria,
         mutation,
+        age_annealing,
+        fitness_stagnation_detector,
     )
 
     best = runner.run()
