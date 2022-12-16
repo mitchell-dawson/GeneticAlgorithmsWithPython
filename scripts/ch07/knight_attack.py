@@ -3,15 +3,17 @@ from __future__ import annotations
 import logging
 import random
 import time
-from pathlib import Path
-from typing import Any, List, Tuple
+from copy import deepcopy
+from typing import Tuple, Union
 
 import numpy as np
 
-from src.chess import Board, EmptyPiece, Knight, PiecePosition, PieceType
+from src.chess import Board, Knight, PiecePosition, PieceType
 from src.genetic import (
     AbsoluteFitness,
+    AgeAnnealing,
     ChromosomeGenerator,
+    FitnessStagnationDetector,
     Mutation,
     Runner,
     StoppingCriteria,
@@ -22,8 +24,18 @@ class GeneSet(Tuple[PiecePosition, ...]):
     """Gene set for the knight attack problem."""
 
 
-class Chromosome(Board):
+class KnightAttackChromosome:
     """Chromosome for the knight attack problem."""
+
+    def __init__(self, genes: Board, age: int = 0) -> None:
+        self.genes = genes
+        self.age = age
+
+    def __str__(self) -> str:
+        return str(self.genes)
+
+    def __repr__(self) -> str:
+        return str(self.genes)
 
 
 class KnightAttackFitness(AbsoluteFitness):
@@ -32,14 +44,16 @@ class KnightAttackFitness(AbsoluteFitness):
     is the number of squares on the board.
     """
 
-    def __call__(self, chromosome: Chromosome) -> float:
+    def __call__(self, chromosome: KnightAttackChromosome) -> float:
 
         attacked_positions = set()
 
-        for position in chromosome.positions():
+        for position in chromosome.genes.positions():
 
-            if chromosome[position.y, position.x].piece_type == PieceType.KNIGHT:
-                attacked_positions.update(Knight().get_attacks(position, chromosome))
+            if chromosome.genes[position.y, position.x].piece_type == PieceType.KNIGHT:
+                attacked_positions.update(
+                    Knight().get_attacks(position, chromosome.genes)
+                )
 
         return len(attacked_positions)
 
@@ -53,11 +67,11 @@ class KnightAttackMutation(Mutation):
         super().__init__(fitness, gene_set)
         self.max_knights = max_knights
 
-    def __call__(self, parent: Chromosome) -> Chromosome:
+    def __call__(self, parent: KnightAttackChromosome) -> KnightAttackChromosome:
 
-        child = parent.copy()
+        child = deepcopy(parent)
 
-        knight_positions = list(child.positions(piece_type=PieceType.KNIGHT))
+        knight_positions = list(child.genes.positions(piece_type=PieceType.KNIGHT))
 
         # choose a random new position for the knight
         new_position = random.choice(self.gene_set)
@@ -65,17 +79,17 @@ class KnightAttackMutation(Mutation):
         if len(knight_positions) < self.max_knights:
             # add a knight
             new_position = random.choice(self.gene_set)
-            child.place(Knight(), new_position)
+            child.genes.place(Knight(), new_position)
         else:
 
-            for ii in range(random.choice(range(4))):
+            for _ in range(random.choice(range(4))):
                 # choose a random knight position
                 knight_position = random.choice(list(knight_positions))
 
                 # move the knight to the new position
-                child.move(knight_position, new_position)
+                child.genes.move(knight_position, new_position)
 
-        return Chromosome(child)
+        return child
 
 
 class KnightAttackStoppingCriteria(StoppingCriteria):
@@ -83,7 +97,7 @@ class KnightAttackStoppingCriteria(StoppingCriteria):
         self.target = target
         self.fitness = fitness
 
-    def __call__(self, chromosome: Chromosome) -> bool:
+    def __call__(self, chromosome: KnightAttackChromosome) -> bool:
         """Return true if can stop the genetic algorithm."""
 
         return self.fitness(chromosome) == self.target
@@ -93,8 +107,8 @@ class KnightAttackChromosomeGenerator(ChromosomeGenerator):
     def __init__(self, board) -> None:
         self.board = board
 
-    def __call__(self) -> Chromosome:
-        return Chromosome(self.board)
+    def __call__(self) -> KnightAttackChromosome:
+        return KnightAttackChromosome(self.board, age=0)
 
 
 class KnightAttackRunner(Runner):
@@ -104,11 +118,17 @@ class KnightAttackRunner(Runner):
         fitness: KnightAttackFitness,
         stopping_criteria: StoppingCriteria,
         mutate: Mutation,
+        age_annealing: AgeAnnealing,
+        fitness_stagnation_detector: FitnessStagnationDetector,
     ):
-        self.chromosome_generator = chromosome_generator
-        self.fitness = fitness
-        self.stopping_criteria = stopping_criteria
-        self.mutate = mutate
+        super().__init__(
+            chromosome_generator,
+            fitness,
+            stopping_criteria,
+            mutate,
+            age_annealing,
+            fitness_stagnation_detector,
+        )
 
     def display(self, candidate):
         time_diff = time.time() - self.start_time
@@ -122,8 +142,9 @@ def knight_attack(
     board: Board,
     max_knights: int,
     include_edges: bool = True,
-    fitness_stagnation_limit: int = 10000,
-) -> Chromosome:
+    fitness_stagnation_limit: Union[float, int] = float("inf"),
+    age_limit: float = float("inf"),
+) -> KnightAttackChromosome:
 
     target = board.total_squares  # all squares on the board attacked by a knight
 
@@ -134,14 +155,23 @@ def knight_attack(
     fitness = KnightAttackFitness()
     chromosome_generator = KnightAttackChromosomeGenerator(board)
     stopping_criteria = KnightAttackStoppingCriteria(target, fitness)
-    mutate = KnightAttackMutation(fitness, gene_set, max_knights=max_knights)
+    mutation = KnightAttackMutation(fitness, gene_set, max_knights=max_knights)
+    age_annealing = AgeAnnealing(age_limit=age_limit)
 
-    runner = KnightAttackRunner(
-        chromosome_generator, fitness, stopping_criteria, mutate
+    fitness_stagnation_detector = FitnessStagnationDetector(
+        fitness, fitness_stagnation_limit
     )
 
-    best = runner.run(fitness_stagnation_limit)
-    print(best)
+    runner = KnightAttackRunner(
+        chromosome_generator,
+        fitness,
+        stopping_criteria,
+        mutation,
+        age_annealing,
+        fitness_stagnation_detector,
+    )
+
+    best = runner.run()
     return best
 
 
@@ -166,7 +196,12 @@ def main():
 
     board = Board.empty_board(board_height, board_width)
 
-    knight_attack(board, max_knights, include_edges, fitness_stagnation_limit)
+    knight_attack(
+        board,
+        max_knights,
+        include_edges,
+        fitness_stagnation_limit=fitness_stagnation_limit,
+    )
 
 
 if __name__ == "__main__":

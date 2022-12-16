@@ -1,6 +1,7 @@
 import numpy as np
 
 from scripts.ch07.knight_attack import (
+    KnightAttackChromosome,
     KnightAttackFitness,
     KnightAttackMutation,
     knight_attack,
@@ -24,9 +25,11 @@ def test_call_one_knight_in_centre_of_board_KnightAttackFitness():
     knight = Knight()
     board.place(knight, position)
 
+    chromosome = KnightAttackChromosome(board)
+
     fitness = KnightAttackFitness()
 
-    assert fitness(board) == 8
+    assert fitness(chromosome) == 8
 
 
 def test_call_one_knight_on_edge_of_board_KnightAttackFitness():
@@ -36,9 +39,11 @@ def test_call_one_knight_on_edge_of_board_KnightAttackFitness():
     knight = Knight()
     board.place(knight, position)
 
+    chromosome = KnightAttackChromosome(board)
+
     fitness = KnightAttackFitness()
 
-    assert fitness(board) == 4
+    assert fitness(chromosome) == 4
 
 
 def test_call_one_knight_in_corner_of_board_KnightAttackFitness():
@@ -47,9 +52,10 @@ def test_call_one_knight_in_corner_of_board_KnightAttackFitness():
     position = PiecePosition(x=0, y=0)
     knight = Knight()
     board.place(knight, position)
+    chromosome = KnightAttackChromosome(board)
 
     fitness = KnightAttackFitness()
-    assert fitness(board) == 2
+    assert fitness(chromosome) == 2
 
 
 def test_call_two_knights_with_some_overlap_KnightAttackFitness():
@@ -66,10 +72,12 @@ def test_call_two_knights_with_some_overlap_KnightAttackFitness():
 
     print(board)
 
+    chromosome = KnightAttackChromosome(board)
+
     fitness = KnightAttackFitness()
 
     # 8 + 8 - 2 = 14
-    assert fitness(board) == 14
+    assert fitness(chromosome) == 14
 
 
 def test_call_edge_knights_with_some_overlap_KnightAttackFitness():
@@ -85,18 +93,19 @@ def test_call_edge_knights_with_some_overlap_KnightAttackFitness():
         board.place(knight, position)
 
     print(board)
+    chromosome = KnightAttackChromosome(board)
 
     fitness = KnightAttackFitness()
 
     # 8 + 8 - 2 = 14
-    assert fitness(board) == 8
+    assert fitness(chromosome) == 8
 
 
 def test_call_KnightAttackMutation():
 
     fitness = KnightAttackFitness()
 
-    board = Board.empty_board(100, 100)
+    board = Board.empty_board(1000, 1000)
     gene_set = list(board.positions())
 
     mutation = KnightAttackMutation(fitness, gene_set, max_knights=1)
@@ -105,6 +114,8 @@ def test_call_KnightAttackMutation():
     knight = Knight()
     board.place(knight, position)
 
-    mutated_board = mutation(board)
+    chromosome = KnightAttackChromosome(board)
 
-    assert not np.array_equal(mutated_board, board)
+    mutated_chromosome = mutation(chromosome)
+
+    assert not np.array_equal(mutated_chromosome.genes, chromosome.genes)
