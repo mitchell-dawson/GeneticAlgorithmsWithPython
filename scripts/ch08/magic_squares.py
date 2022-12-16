@@ -4,16 +4,18 @@ import logging
 import random
 import time
 from copy import deepcopy
+from typing import Union
 
 import numpy as np
 
 from src.genetic import (
     AbsoluteFitness,
     AgeAnnealing,
-    AgeAnnealingRunner,
     Chromosome,
     ChromosomeGenerator,
+    FitnessStagnationDetector,
     Mutation,
+    Runner,
     StoppingCriteria,
 )
 
@@ -295,7 +297,7 @@ class MagicSquaresChromosomeGenerator(ChromosomeGenerator):
         )
 
 
-class MagicSquaresRunner(AgeAnnealingRunner):
+class MagicSquaresRunner(Runner):
     def __init__(
         self,
         chromosome_generator: MagicSquaresChromosomeGenerator,
@@ -303,12 +305,16 @@ class MagicSquaresRunner(AgeAnnealingRunner):
         stopping_criteria: StoppingCriteria,
         mutate: Mutation,
         age_annealing: AgeAnnealing,
+        fitness_stagnation_detector: FitnessStagnationDetector,
     ):
-        self.chromosome_generator = chromosome_generator
-        self.fitness = fitness
-        self.stopping_criteria = stopping_criteria
-        self.mutate = mutate
-        self.age_annealing = age_annealing
+        super().__init__(
+            chromosome_generator,
+            fitness,
+            stopping_criteria,
+            mutate,
+            age_annealing,
+            fitness_stagnation_detector,
+        )
 
     def display(self, candidate):
         time_diff = time.time() - self.start_time
@@ -318,26 +324,33 @@ class MagicSquaresRunner(AgeAnnealingRunner):
         logging.info("time=%f", time_diff)
 
 
-def magic_squares(side_length: int, age_limit: int = 50) -> MagicSquaresChromosome:
+def magic_squares(
+    side_length: int,
+    fitness_stagnation_limit: Union[float, int] = float("inf"),
+    age_limit: float = float("inf"),
+) -> MagicSquaresChromosome:
 
     target = 0  # no difference between target and sum of the rows, columns, diagonals
 
     fitness = MagicSquaresFitness()
     chromosome_generator = MagicSquaresChromosomeGenerator(side_length)
     stopping_criteria = MagicSquaresStoppingCriteria(target, fitness)
-    mutate = MagicSquaresMutation(side_length)
+    mutation = MagicSquaresMutation(side_length)
     age_annealing = AgeAnnealing(age_limit=age_limit)
 
+    fitness_stagnation_detector = FitnessStagnationDetector(
+        fitness, fitness_stagnation_limit
+    )
     runner = MagicSquaresRunner(
         chromosome_generator,
         fitness,
         stopping_criteria,
-        mutate,
-        age_annealing=age_annealing,
+        mutation,
+        age_annealing,
+        fitness_stagnation_detector,
     )
 
     best = runner.run()
-    print(best)
     return best
 
 
@@ -346,12 +359,12 @@ def main():
     logging_format = (
         "[%(levelname)8s :%(filename)20s:%(lineno)4s - %(funcName)10s] %(message)s"
     )
-    logging.basicConfig(format=logging_format, level=logging.DEBUG)
+    logging.basicConfig(format=logging_format, level=logging.INFO)
 
     side_length = 3
-    age_limt = 50
+    age_limit = 50
 
-    best = magic_squares(side_length, age_limit=age_limt)
+    best = magic_squares(side_length, age_limit=age_limit)
 
 
 if __name__ == "__main__":

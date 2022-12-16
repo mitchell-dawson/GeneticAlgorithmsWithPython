@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 from scripts.ch08.magic_squares import (
-    Chromosome,
     MagicSquare,
     MagicSquaresChromosome,
     MagicSquaresChromosomeGenerator,
@@ -209,5 +208,5 @@ def test_call_MagicSquaresMutation():
 
 def test_magic_squares():
     side_length = 3
-    best = magic_squares(side_length)
+    best = magic_squares(side_length, age_limit=50)
     assert best.genes.is_magic()
