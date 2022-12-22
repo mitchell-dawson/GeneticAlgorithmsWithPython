@@ -8,9 +8,12 @@ from scripts.ch09.knapsack_problem import (
     KnapsackChromosome,
     KnapsackChromosomeGenerator,
     KnapsackFitness,
+    KnapsackMutation,
     KnapsackStoppingCriteria,
     Resource,
     ResourceQuantity,
+    add,
+    fill_knapsack,
 )
 
 
@@ -66,6 +69,29 @@ def test_init_Resource():
     assert resource.value == value
     assert resource.weight == weight
     assert resource.volume == volume
+
+
+def test_max_quantity_Resource(resources):
+    """GIVEN a resource
+    WHEN the max_quantity method is called with a max weight and max volume
+    THEN the maximum quantity of the resource that fits within the max weight and
+        max volume constraints is returned
+    """
+    random.seed(1)
+
+    max_weight = 50
+    max_volume = 100
+
+    for resource in resources:
+
+        max_quantity = resource.max_quantity(max_weight, max_volume)
+
+        assert resource.weight * max_quantity <= max_weight
+        assert resource.volume * max_quantity <= max_volume
+
+        assert (resource.weight * (max_quantity + 1) > max_weight) or (
+            resource.volume * (max_quantity + 1) > max_volume
+        )
 
 
 def test_init_ResourceQuantity():
@@ -284,77 +310,296 @@ def test_call_KnapsackChromosomeGenerator(resources):
     assert chromosome.total_value == 207920
 
 
-def test_add_KnapsackChromosomeGenerator(resources):
-    """GIVEN a KnapsackChromosomeGenerator
+def test_add(resources):
+    """GIVEN a list of genes and a list of resources
     WHEN the add method is called
-    THEN a resource quantity is returned
+    THEN a resource quantity is returned that fits within the max weight and max
+        volume constraints
     """
     random.seed(1)
 
     max_weight = 50
     max_volume = 100
 
-    chromosome_generator = KnapsackChromosomeGenerator(
-        resources, max_weight, max_volume
+    genes = []
+
+    resource_quantity = add(genes, resources, max_weight, max_volume)
+
+    # the resource should fit within the max weight and max volume constraints
+    total_weight = resource_quantity.resource.weight * resource_quantity.quantity
+    total_volume = resource_quantity.resource.volume * resource_quantity.quantity
+
+    assert total_weight <= max_weight
+    assert total_volume <= max_volume
+
+    # show that adding one more of the same resource would exceed the max weight or
+    # max volume
+    total_weight_with_one_more = resource_quantity.resource.weight * (
+        resource_quantity.quantity + 1
     )
 
-    chromosome_generator.add()
+    total_volume_with_one_more = resource_quantity.resource.volume * (
+        resource_quantity.quantity + 1
+    )
 
-    assert False
+    assert (
+        total_weight_with_one_more > max_weight
+        or total_volume_with_one_more > max_volume
+    )
 
 
-def test_max_quantity_high_volume_KnapsackChromosomeGenerator(resources):
-    """GIVEN a KnapsackChromosomeGenerator
-    WHEN the max_quantity method is called on a resource with a high volume
-    THEN a valid quantity is returned
+def test_choose_to_remove_item_empty_KnapsackMutation():
+    """GIVEN a KnapsackMutation
+    WHEN the choose_to_remove_item method is called on an empty list
+    THEN False is returned as there is nothing to remove
     """
+
+    genes = []
+    assert not KnapsackMutation.choose_to_remove_item(genes)
+
+
+def test_choose_to_remove_item_single_item_KnapsackMutation():
+    """GIVEN a KnapsackMutation
+    WHEN the choose_to_remove_item method is called on list of a single item
+    THEN False is returned as then there would be nothing in the knapsack
+    """
+
+    genes = [ResourceQuantity(Resource("Flour", 1680, 0.265, 0.41), 1)]
+    assert not KnapsackMutation.choose_to_remove_item(genes)
+
+
+def test_choose_to_remove_item_KnapsackMutation(resource_quantities):
+    """GIVEN a KnapsackMutation
+    WHEN the choose_to_remove_item method is called on a list of genes
+    THEN True is returned as there is something to remove
+    """
+
+    random.seed(1)
+
+    decisions_to_remove = [
+        KnapsackMutation.choose_to_remove_item(resource_quantities)
+        for ii in range(10000)
+    ]
+
+    # roughly 10% of the time, an item should be removed
+    assert sum(decisions_to_remove) == 914
+
+
+def test_init_KnapsackMutation(resources):
+
+    max_weight = 50
+    max_volume = 100
+
+    mutation = KnapsackMutation(resources, max_weight, max_volume)
+
+    assert mutation.gene_set == resources
+    assert mutation.max_weight == max_weight
+    assert mutation.max_volume == max_volume
+
+
+def test_remaining_weight_KnapsackChromosome():
+    """GIVEN a KnapsackChromosome
+    WHEN the remaining_weight method is called with a max_weight
+    THEN the correct remaining weight is returned
+    """
+
+    max_weight = 50
+
+    genes = [ResourceQuantity(Resource("Flour", 1680, 0.265, 0.41), 3)]
+
+    assert np.isclose(
+        KnapsackChromosome(genes).remaining_weight(max_weight), max_weight - 3 * 0.265
+    )
+
+
+def test_remaining_weight_KnapsackChromosome():
+    """GIVEN a KnapsackChromosome
+    WHEN the remaining_volumne method is called with a max_volumne
+    THEN the correct remaining volumne is returned
+    """
+
+    max_volume = 100
+
+    genes = [ResourceQuantity(Resource("Flour", 1680, 0.265, 0.41), 3)]
+
+    assert np.isclose(
+        KnapsackChromosome(genes).remaining_volume(max_volume), max_volume - 3 * 0.41
+    )
+
+
+def test_remove_random_item_KnapsackMutation(resources, resource_quantities):
+    """GIVEN a KnapsackMutation
+    WHEN the remove_random_item method is called on a list of genes
+    THEN a random item is removed from the list
+    """
+
     random.seed(1)
 
     max_weight = 50
     max_volume = 100
 
-    chromosome_generator = KnapsackChromosomeGenerator(
-        resources, max_weight, max_volume
-    )
+    mutation = KnapsackMutation(resources, max_weight, max_volume)
 
-    chromosome_generator.max_quantity()
+    genes = resource_quantities.copy()
+    assert len(genes) == 3
 
-    assert False
+    mutation.remove_random_item(genes)
+
+    assert len(genes) == 2
+    assert genes[0].resource.name == "Butter"
+    assert genes[1].resource.name == "Sugar"
+
+    KnapsackMutation.remove_random_item(genes)
+
+    assert len(genes) == 1
+    assert genes[0].resource.name == "Sugar"
+
+    KnapsackMutation.remove_random_item(genes)
+
+    assert len(genes) == 0
 
 
-def test_max_quantity_high_weight_KnapsackChromosomeGenerator(resources):
-    """GIVEN a KnapsackChromosomeGenerator
-    WHEN the max_quantity method is called on a resource with a high weight
-    THEN a valid quantity is returned
+def test_choose_to_add_item_empty_KnapsackMutation(resources):
+    """GIVEN a KnapsackMutation
+    WHEN the choose_to_add_item method is called on an empty list
+    THEN True is returned as there is something to add
     """
+
     random.seed(1)
 
     max_weight = 50
     max_volume = 100
 
-    chromosome_generator = KnapsackChromosomeGenerator(
-        resources, max_weight, max_volume
+    mutation = KnapsackMutation(resources, max_weight, max_volume)
+
+    decisions_to_add = [mutation.choose_to_add_item([]) for ii in range(100)]
+
+    assert sum(decisions_to_add) == 100
+
+
+def test_choose_to_add_item_not_all_items_KnapsackMutation(
+    resources, resource_quantities
+):
+    """GIVEN a KnapsackMutation
+    WHEN the choose_to_add_item method is called on a list of genes
+    THEN True is returned as there is something to add
+    """
+
+    random.seed(1)
+
+    max_weight = 50
+    max_volume = 100
+
+    mutation = KnapsackMutation(resources, max_weight, max_volume)
+
+    decisions_to_add = [
+        mutation.choose_to_add_item(resource_quantities[:2]) for ii in range(10000)
+    ]
+
+    # roughly 1% of the time, we should choose to add an item should be added
+    assert sum(decisions_to_add) == 83
+
+
+def test_add_random_item_KnapsackMutation(resources):
+    """GIVEN a KnapsackMutation
+    WHEN the add_random_item method is called on a list of genes
+    THEN a random item is added to the list
+    """
+
+    random.seed(1)
+
+    max_weight = 50
+    max_volume = 100
+
+    mutation = KnapsackMutation(resources, max_weight, max_volume)
+
+    genes = []
+    assert len(genes) == 0
+
+    genes = mutation.add_random_item(genes)
+
+    assert len(genes) == 1
+    assert genes[0].resource.name == "Flour"
+
+
+def test_choose_to_change_item_full_KnapsackMutation(resources, resource_quantities):
+    """GIVEN a KnapsackMutation
+    WHEN the choose_to_change_item method is called on a full list of genes
+    THEN False is returned as there is nothing to change
+    """
+
+    random.seed(1)
+
+    max_weight = 50
+    max_volume = 100
+
+    mutation = KnapsackMutation(resources, max_weight, max_volume)
+
+    assert not mutation.choose_to_change_item(resource_quantities)
+
+
+def test_choose_to_change_item_empty_KnapsackMutation(resources, resource_quantities):
+    """GIVEN a KnapsackMutation
+    WHEN the choose_to_change_item method is called on an empty list
+    THEN True is returned as there is something to change
+    """
+
+    random.seed(2)
+
+    max_weight = 50
+    max_volume = 100
+
+    mutation = KnapsackMutation(resources, max_weight, max_volume)
+
+    decisions_to_add = [
+        mutation.choose_to_change_item(resource_quantities[:2]) for ii in range(10000)
+    ]
+
+    # roughly 20% of the time, we should choose to add an item should be added
+    assert sum(decisions_to_add) == 2032
+
+
+def test_call_KnapsackMutation(resources, resource_quantities):
+
+    random.seed(2)
+
+    max_weight = 50
+    max_volume = 100
+
+    parent = KnapsackChromosome(resource_quantities.copy())
+
+    mutation = KnapsackMutation(resources, max_weight, max_volume)
+
+    child = mutation(parent)
+
+    assert isinstance(child, KnapsackChromosome)
+    assert child.age == parent.age
+    assert child.genes != parent.genes
+    assert len(parent.genes) == 3
+    assert len(child.genes) == 2
+
+
+def test_cookies_fill_knapsack():
+
+    random.seed(1)
+
+    max_weight = 10
+    max_volume = 4
+    fitness_stagnation_limit = 1000
+
+    gene_set = [
+        Resource("Flour", 1680, 0.265, 0.41),  # 1
+        Resource("Butter", 1440, 0.5, 0.13),  # 14
+        Resource("Sugar", 1840, 0.441, 0.29),  # 6
+    ]
+
+    best = fill_knapsack(
+        gene_set,
+        max_weight,
+        max_volume,
+        fitness_stagnation_limit=fitness_stagnation_limit,
     )
 
-    chromosome_generator.max_quantity()
-
-    assert False
-
-
-def test_cookies_fill_knapsack(self):
-    # items = [
-    #     Resource("Flour", 1680, 0.265, 0.41),
-    #     Resource("Butter", 1440, 0.5, 0.13),
-    #     Resource("Sugar", 1840, 0.441, 0.29),
-    # ]
-    # maxWeight = 10
-    # maxVolume = 4
-    # optimal = get_fitness(
-    #     [
-    #         ItemQuantity(items[0], 1),
-    #         ItemQuantity(items[1], 14),
-    #         ItemQuantity(items[2], 6),
-    #     ]
-    # )
-    # self.fill_knapsack(items, maxWeight, maxVolume, optimal)
-    assert False
+    assert best.total_value == 29200
+    assert best.total_weight <= max_weight
+    assert best.total_volume <= max_volume

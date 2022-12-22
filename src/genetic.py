@@ -30,7 +30,7 @@ from abc import ABC, abstractmethod
 from bisect import bisect_left
 from copy import deepcopy
 from math import exp
-from typing import Any, List, Optional, Protocol, Union
+from typing import Any, List, Optional, Protocol, Type, Union
 
 
 class Gene(Protocol):
@@ -127,93 +127,6 @@ class ChromosomeGenerator(ABC):
     @abstractmethod
     def __call__(self) -> Chromosome:
         """Generate a chromosome from the gene set"""
-
-
-# class Runner(ABC):
-#     """Class for running the genetic algorithm."""
-
-#     start_time: float
-#     chromosome_generator: ChromosomeGenerator
-#     fitness: Fitness
-#     stopping_criteria: StoppingCriteria
-#     mutate: Mutation
-#     fitness_stagnation_detector: FitnessStagnationDetection
-
-#     @abstractmethod
-#     def display(self, candidate):
-#         pass
-
-#     def run(self, fitness_stagnation_limit: int = 10000) -> Chromosome:
-#         """Run the genetic algorithm.
-
-#         Returns
-#         -------
-#         Chromosome
-#             The best chromosome found
-#         """
-#         logging.info("Starting genetic algorithm run")
-#         random.seed()
-
-#         fitness_stagnation_detector = FitnessStagnationDetection(
-#             self.fitness, fitness_stagnation_limit
-#         )
-
-#         self.start_time = time.time()
-#         self.iteration_num = 0
-
-#         # generate an initial chromosome
-#         best_parent = self.chromosome_generator()
-#         logging.info("Initial chromosome: %s", best_parent)
-
-#         # if the initial chromosome is good enough, we're done
-#         if self.stopping_criteria(best_parent):
-#             logging.info("Stopping criteria met on initial chromosome")
-#             return best_parent
-
-#         while True:  # repeat until child is as good or better than the parent
-#             self.iteration_num += 1
-#             logging.debug("Starting iteration %s", self.iteration_num)
-
-#             logging.debug("Creating child by mutating parent...")
-#             child = self.mutate(best_parent)
-#             logging.debug("Child created: %s", str(child))
-
-#             logging.debug("Comparing child and parent fitness...")
-#             if self.fitness(best_parent) > self.fitness(child):
-#                 logging.debug("Child is not as fit as parent")
-
-#                 if fitness_stagnation_detector(best_parent):
-#                     logging.info("Fitness stagnation detected")
-#                     logging.debug("Iteration complete")
-#                     logging.debug("= " * 30)
-#                     return best_parent
-
-#                 logging.debug("Fitness stagnation not detected")
-#                 logging.debug("Iteration complete")
-#                 logging.debug("= " * 30)
-#                 continue
-
-#             logging.debug("Child is as fit or more fit than parent")
-#             logging.info(
-#                 "Iteration %s - New best chromosome found: %s",
-#                 self.iteration_num,
-#                 child,
-#             )
-#             self.display(child)
-
-#             # stop if the child is good enough, otherwise repeat
-#             logging.debug("Checking stopping criteria...")
-#             if self.stopping_criteria(child):
-#                 logging.info("Stopping criteria met by child")
-#                 logging.debug("Iteration complete")
-#                 logging.debug("= " * 30)
-#                 return child
-
-#             logging.debug("Stopping criteria not met by child")
-#             best_parent = child
-
-#             logging.debug("Iteration complete")
-#             logging.debug("= " * 30)
 
 
 class AgeAnnealing:
@@ -428,6 +341,7 @@ class FitnessStagnationDetected(Exception):
         self.chromosome = chromosome
         self.iteration_num = iteration_num
         logging.info("Fitness stagnation detected")
+        logging.info("Best chromosome found: %s", chromosome)
         logging.debug("Iteration complete")
         logging.debug("= " * 30)
 

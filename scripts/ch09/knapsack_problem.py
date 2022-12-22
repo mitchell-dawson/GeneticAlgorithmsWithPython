@@ -6,9 +6,7 @@ import sys
 import time
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import List, Union
-
-import numpy as np
+from typing import List, Type, Union
 
 from src.genetic import (
     AgeAnnealing,
@@ -30,6 +28,31 @@ class Resource:
     value: int
     weight: float
     volume: float
+
+    def max_quantity(self, max_weight: float, max_volume: float):
+        """Return the maximum number of the item that can be added to the chromosome
+        without exceeding the maximum weight or volume.
+
+        Parameters
+        ----------
+        item : Resource
+            The item to add to the chromosome
+        max_weight : float
+            The maximum weight allowed of the chromosome
+        max_volume : float
+            The maximum volume allowed of the chromosome
+
+        Returns
+        -------
+        int
+            The maximum number of the item that can be added to the chromosome
+            without exceeding the maximum weight or volume
+        """
+
+        return min(
+            int(max_weight / self.weight) if self.weight > 0 else sys.maxsize,
+            int(max_volume / self.volume) if self.volume > 0 else sys.maxsize,
+        )
 
 
 @dataclass
@@ -102,6 +125,44 @@ class KnapsackChromosome(Chromosome):
             ]
         )
 
+    def remaining_weight(
+        self,
+        max_weight: float,
+    ) -> float:
+        """Calculate the remaining weight of the knapsack.
+
+        Parameters
+        ----------
+        max_weight : float
+            The maximum weight of the knapsack.
+
+        Returns
+        -------
+        float
+            The remaining weight of the knapsack.
+        """
+
+        return max_weight - self.total_weight
+
+    def remaining_volume(
+        self,
+        max_volume: float,
+    ) -> float:
+        """Calculate the remaining volume of the knapsack.
+
+        Parameters
+        ----------
+        max_volume : float
+            The maximum volume of the knapsack.
+
+        Returns
+        -------
+        float
+            The remaining volume of the knapsack.
+        """
+
+        return max_volume - self.total_volume
+
 
 class KnapsackFitness(RelativeFitness):
     """Fitness function of the magic knapsack problem."""
@@ -125,6 +186,175 @@ class KnapsackFitness(RelativeFitness):
             return self.chromosome.total_weight < other.chromosome.total_weight
 
         return self.chromosome.total_volume < other.chromosome.total_volume
+
+
+class KnapsackMutation(Mutation):
+    """Mutation function of the knapsack problem."""
+
+    def __init__(
+        self,
+        gene_set: List[Resource],
+        max_weight: float,
+        max_volume: float,
+    ):
+        super().__init__(fitness=None, gene_set=gene_set)
+        self.max_weight = max_weight
+        self.max_volume = max_volume
+        self.remaining_weight = max_weight
+        self.remaining_volume = max_volume
+
+    def __call__(self, parent: KnapsackChromosome):
+
+        genes = deepcopy(parent.genes)
+
+        if self.choose_to_remove_item(genes):
+            genes = self.remove_random_item(genes)
+            # We don’t immediately return when removing an item because we know
+            # removing an item reduces the fitness.
+
+        if self.choose_to_add_item(genes):
+            genes = self.add_random_item(genes)
+            return KnapsackChromosome(genes, parent.age)
+
+        # If we get to this point, we have removed an item and not added a new item.
+        # So now we will change the quantity of an existing item.
+        self.change_item_quantity(genes)
+
+        genes = sorted(genes, key=lambda x: x.resource.name)
+
+        return KnapsackChromosome(genes, parent.age)
+
+    def change_item_quantity(self, genes):
+        idx = random.randrange(0, len(genes))
+        resource_to_change = genes[idx].resource
+
+        # add an amount between 1 and the maximum amount that can be added
+        # without exceeding the maximum weight or volume.
+        max_quantity = resource_to_change.max_quantity(
+            KnapsackChromosome(genes).remaining_weight(self.max_weight),
+            KnapsackChromosome(genes).remaining_volume(self.max_volume),
+        )
+
+        if max_quantity > 0:
+            new_quantity = random.randint(1, max_quantity)
+            genes[idx] = ResourceQuantity(resource_to_change, new_quantity)
+        else:
+            # if the maximum quantity is zero, then we remove the gene.
+            del genes[idx]
+
+    def choose_to_change_item(self, genes: List[ResourceQuantity]) -> bool:
+        """Return true if a random item should be changed in the knapsack.
+
+        Then we give the algorithm a chance to pick a different item type.
+
+        Parameters
+        ----------
+        genes : List[ResourceQuantity]
+            The list of resources in the knapsack.
+
+        Returns
+        -------
+        bool
+            True if a random item should be changed in the knapsack.
+        """
+
+        rng = random.randint(0, 4) == 0
+        not_all_resources_added = len(genes) < len(self.gene_set)
+        return not_all_resources_added and rng
+
+    def add_random_item(self, genes):
+
+        chromosome = KnapsackChromosome(genes)
+
+        new_gene = add(
+            genes,
+            self.gene_set,
+            chromosome.remaining_weight(self.max_weight),
+            chromosome.remaining_volume(self.max_volume),
+        )
+
+        if new_gene is not None:
+            genes.append(new_gene)
+
+        return genes
+
+    def choose_to_add_item(self, genes: List[ResourceQuantity]) -> bool:
+        """Return true if a new item should be added to the knapsack.
+        The conditions are that the knapsack is not full and that a random
+        the knapsack is not full or that not all items have been added to the
+        knapsack and that a random number is 0.
+
+        We’ll always add if the length is zero and when there is weight or volume
+        available. Otherwise, if we haven’t used all the item types, we’ll give the
+        algorithm a small chance of adding another item type.
+
+        Parameters
+        ----------
+        genes : List[ResourceQuantity]
+            A list of resources and their quantities
+
+        Returns
+        -------
+        bool
+            True if a new item should be added to the knapsack.
+        """
+
+        chromosome = KnapsackChromosome(genes)
+
+        weight_ok = chromosome.remaining_weight(self.max_weight) > 0
+        volume_ok = chromosome.remaining_volume(self.max_volume) > 0
+
+        knapsack_empty = len(genes) == 0
+        not_all_resources_added = len(genes) < len(self.gene_set)
+        rng = random.randint(0, 100) == 0
+
+        return (weight_ok or volume_ok) and (
+            knapsack_empty or (not_all_resources_added and rng)
+        )
+
+    @staticmethod
+    def remove_random_item(
+        genes: List[ResourceQuantity],
+    ) -> List[ResourceQuantity]:
+        """Remove a random item from the knapsack.
+
+        Parameters
+        ----------
+        genes : List[ResourceQuantity]
+            A list of resources and their quantities in the knapsack
+
+        Returns
+        -------
+        List[ResourceQuantity]
+            A list of resources and their quantities in the knapsack
+        """
+
+        idx = random.randrange(0, len(genes))
+        del genes[idx]
+        return genes
+
+    @staticmethod
+    def choose_to_remove_item(genes: List[ResourceQuantity]) -> bool:
+        """Return true if the mutation should remove an item from the knapsack. We
+        to remove an item from the knapsack if the knapsack is not empty and if
+        the random number generator returns 0 (happens with probability = 0.1).
+
+        We need to give it a small chance of removing an item from the knapsack. We’ll
+        only do that if we have more than one item so that the knapsack is never empty.
+
+        Parameters
+        ----------
+        genes : List[ResourceQuantity]
+            A list of resources and their quantities in the knapsack
+
+        Returns
+        -------
+        bool
+            True if the mutation should remove an item from the knapsack
+        """
+
+        rng = random.randint(0, 10) == 0
+        return (len(genes) > 1) and rng
 
 
 class KnapsackStoppingCriteria(StoppingCriteria):
@@ -157,9 +387,7 @@ class KnapsackChromosomeGenerator(ChromosomeGenerator):
 
         for _ in range(random.randrange(1, len(self.gene_set))):
 
-            new_gene = self.add(
-                genes, self.gene_set, remaining_weight, remaining_volume
-            )
+            new_gene = add(genes, self.gene_set, remaining_weight, remaining_volume)
 
             if new_gene is not None:
                 genes.append(new_gene)
@@ -168,38 +396,12 @@ class KnapsackChromosomeGenerator(ChromosomeGenerator):
 
         return KnapsackChromosome(genes, age=0)
 
-    def add(
-        self,
-        genes: List[ResourceQuantity],
-        gene_set: List[Resource],
-        max_weight: float,
-        max_volume: float,
-    ):
-
-        used_items = {resource_quantity.resource for resource_quantity in genes}
-
-        item = random.choice(gene_set)
-
-        while item in used_items:
-            item = random.choice(gene_set)
-
-        max_quantity = self.max_quantity(item, max_weight, max_volume)
-
-        return ResourceQuantity(item, max_quantity) if max_quantity > 0 else None
-
-    def max_quantity(self, item: Resource, max_weight: float, max_volume: float):
-
-        return min(
-            int(max_weight / item.weight) if item.weight > 0 else sys.maxsize,
-            int(max_volume / item.volume) if item.volume > 0 else sys.maxsize,
-        )
-
 
 class KnapsackRunner(Runner):
     def __init__(
         self,
         chromosome_generator: KnapsackChromosomeGenerator,
-        fitness: KnapsackFitness,
+        fitness: Type[KnapsackFitness],
         stopping_criteria: StoppingCriteria,
         mutate: Mutation,
         age_annealing: AgeAnnealing,
@@ -218,22 +420,65 @@ class KnapsackRunner(Runner):
         time_diff = time.time() - self.start_time
 
         logging.debug("candidate=%s", candidate)
-        logging.debug("fitness=%s", self.fitness(candidate))
+        logging.debug("total_weight=%f", candidate.total_weight)
+        logging.debug("total_volume=%f", candidate.total_volume)
         logging.info("time=%f", time_diff)
 
 
+def add(
+    genes: List[ResourceQuantity],
+    gene_set: List[Resource],
+    max_weight: float,
+    max_volume: float,
+) -> Union[ResourceQuantity, None]:
+    """Choose a random item from the gene set and add it to the chromosome. Add
+    as many of the item as possible without exceeding the maximum weight or
+    volume.
+
+    When adding an item we’re going to exclude item types that are already in the
+    knapsack from our options because we don’t want to have to sum multiple groups of
+    a particular item type. Then we pick a random item and add as much of that item to
+    the knapsack as we can.
+
+    Parameters
+    ----------
+    genes : List[ResourceQuantity]
+        A list of resources already in the chromosome
+    max_weight : float
+        The maximum weight allowed of the chromosome
+    max_volume : float
+        The maximum volume allowed of the chromosome
+
+    Returns
+    -------
+    ResourceQuantity
+        A resource quantity object for the new item
+    """
+
+    used_resources = {resource_quantity.resource for resource_quantity in genes}
+
+    resource = random.choice(gene_set)
+
+    while resource in used_resources:
+        resource = random.choice(gene_set)
+
+    max_quantity = resource.max_quantity(max_weight, max_volume)
+
+    return ResourceQuantity(resource, max_quantity) if max_quantity > 0 else None
+
+
 def fill_knapsack(
-    items: List[Resource],
+    gene_set: List[Resource],
+    max_weight: float,
+    max_volume: float,
     fitness_stagnation_limit: Union[float, int] = float("inf"),
     age_limit: float = float("inf"),
 ) -> KnapsackChromosome:
 
-    target = 0  # no difference between target and sum of the rows, columns, diagonals
-
-    fitness = KnapsackFitness()
-    chromosome_generator = KnapsackChromosomeGenerator(side_length)
-    stopping_criteria = KnapsackStoppingCriteria(target, fitness)
-    mutation = KnapsackMutation(side_length)
+    fitness = KnapsackFitness
+    chromosome_generator = KnapsackChromosomeGenerator(gene_set, max_weight, max_volume)
+    stopping_criteria = KnapsackStoppingCriteria()
+    mutation = KnapsackMutation(gene_set, max_weight, max_volume)
     age_annealing = AgeAnnealing(age_limit=age_limit)
 
     fitness_stagnation_detector = FitnessStagnationDetector(
@@ -255,34 +500,31 @@ def fill_knapsack(
 def main():
 
     logging_format = (
-        "[%(levelname)8s :%(filename)20s:%(lineno)4s - %(funcName)10s] %(message)s"
+        "[%(levelname)8s :%(filename)20s:%(lineno)4s - %(funcName)25s] %(message)s"
     )
     logging.basicConfig(format=logging_format, level=logging.INFO)
 
     max_weight = 10
     max_volume = 4
-    age_limit = 50
+    fitness_stagnation_limit = 1000
 
     gene_set = [
-        Resource("Flour", 1680, 0.265, 0.41),
-        Resource("Butter", 1440, 0.5, 0.13),
-        Resource("Sugar", 1840, 0.441, 0.29),
+        Resource("Flour", 1680, 0.265, 0.41),  # 1
+        Resource("Butter", 1440, 0.5, 0.13),  # 14
+        Resource("Sugar", 1840, 0.441, 0.29),  # 6
     ]
 
-    max_weight = 10
-    max_volume = 4
+    best = fill_knapsack(
+        gene_set,
+        max_weight,
+        max_volume,
+        fitness_stagnation_limit=fitness_stagnation_limit,
+    )
 
-    # optimal = get_fitness(
-    #     [
-    #         ItemQuantity(items[0], 1),
-    #         ItemQuantity(items[1], 14),
-    #         ItemQuantity(items[2], 6),
-    #     ]
-    # )
-
-    # self.fill_knapsack(items, maxWeight, maxVolume, optimal)
-
-    # best = fill_knapsack(items, , age_limit=age_limit)
+    logging.info("best=%s", best)
+    logging.info("total_weight=%f", best.total_weight)
+    logging.info("total_volume=%f", best.total_volume)
+    logging.info("total_value=%f", best.total_value)
 
 
 if __name__ == "__main__":
