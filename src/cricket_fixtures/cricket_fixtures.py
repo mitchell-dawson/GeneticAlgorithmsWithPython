@@ -92,8 +92,10 @@ def cricket_fixtures_problem(
     stopping_criteria = FixtureListStoppingCriteria(target, fitness)
     age_annealing = AgeAnnealing(age_limit=age_limit)
 
-    # mutation = SwapUpToNFixturesMutation(2)
-    mutation = TheNicolaSwitchProcesserMutation()
+    mutation = SwapUpToNFixturesMutation(2)
+    mutation = (
+        TheNicolaSwitchProcesserMutation()
+    )  # <- this is the best mutation I have found so far
 
     fitness_stagnation_detector = FitnessStagnationDetector(
         fitness, fitness_stagnation_limit

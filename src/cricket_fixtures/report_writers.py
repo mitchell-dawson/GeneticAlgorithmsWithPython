@@ -168,30 +168,3 @@ class FitnessDetailsReportWriter(ReportWriter):
             lines.append("\n\n\n")
 
         return lines
-
-        # logging.info(
-        #     "teams_playing_more_than_once_in_a_week=%d",
-        #     self.fitness.teams_playing_more_than_once_in_a_week(candidate),
-        # )
-        # # logging.info(
-        # #     "incorrect_number_of_fixtures_between_two_teams=%d",
-        # #     self.fitness.incorrect_number_of_fixtures_between_two_teams(candidate),
-        # # )
-        # logging.info("ground_clashes=%d", self.fitness.ground_clashes(candidate))
-        # logging.info(
-        #     "teams_playing_eachother_consecutively=%f",
-        #     self.fitness.teams_playing_eachother_consecutively(candidate),
-        # )
-        # logging.info(
-        #     "teams_has_more_than_one_week_off=%f",
-        #     self.fitness.teams_has_more_than_one_week_off(candidate),
-        # )
-        # logging.info(
-        #     "ground_used_more_than_once_in_two_weeks=%f",
-        #     self.fitness.ground_used_more_than_once_in_two_weeks(candidate),
-        # )
-        # logging.info(
-        #     "teams_with_more_than_two_home_games_in_a_row=%f",
-        #     self.fitness.teams_with_more_than_two_home_games_in_a_row(candidate),
-        # # )
-        # logging.info("time=%.2f", time_diff)
