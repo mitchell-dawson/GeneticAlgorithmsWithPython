@@ -1,0 +1,32 @@
+team_num,name,ground,division,division_num,ground_num
+1,manchester united,old trafford,premier league,0,1
+2,manchester city,etihad,premier league,0,2
+3,liverpool,anfield,premier league,0,3
+4,chelsea,stamford bridge,premier league,0,4
+5,arsenal,emirates,premier league,0,5
+6,tottenham,white hart lane,premier league,0,6
+7,everton,goodison park,premier league,0,7
+8,newcastle united,st james park,premier league,0,8
+9,Ipswich town,portman road,championship,1,9
+10,Norwich city,carrow road,championship,1,10
+11,Leeds united,elland road,championship,1,11
+12,Birmingham city,st andrews,championship,1,12
+13,Bristol city,ashton gate,championship,1,13
+14,Bristol rovers,memorial stadium,championship,1,14
+15,Burnley,turf moor,championship,1,15
+16,Cardiff city,cardiff city stadium,championship,1,16
+17,Charlton athletic,the valley,championship,1,17
+18,Derby county,pride park,championship,1,18
+19,Doncaster rovers,keepmoat stadium,championship,1,19
+20,Fulham,craven cottage,championship,1,20
+21,Leyton orient,barking,division 2,2,21
+22,Middlesbrough,riverside stadium,division 2,2,22
+23,Millwall,the den,division 2,2,23
+24,Nottingham forest,city ground,division 2,2,24
+25,Preston north end,deepdale,division 2,2,25
+26,Queens park rangers,loftus road,division 2,2,26
+27,Reading,madejski stadium,division 2,2,27
+28,Sheffield wednesday,hillsborough,division 2,2,28
+29,Watford,vicarage road,division 2,2,29
+30,Wigan athletic,DW stadium,division 2,2,30
+31,Wolverhampton wanderers,molineux,division 2,2,31

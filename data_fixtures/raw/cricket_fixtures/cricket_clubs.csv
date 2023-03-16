@@ -1,0 +1,169 @@
+team_num,name,ground,ground_num,division,division_num
+1,BRE1,BRE_ground_1,1,1st XI Premier,0
+2,WAN1,WAN_ground_1,2,1st XI Premier,0
+3,CHE1,CHE_ground_1,3,1st XI Premier,0
+4,HAD1,HAD_ground_1,4,1st XI Premier,0
+5,HOR1,HOR_ground_1,5,1st XI Premier,0
+6,BIL1,BIL_ground_1,6,1st XI Premier,0
+7,CHI1,CHI_ground_1,7,1st XI Premier,0
+8,BEL1,BEL_ground_1,8,1st XI Premier,0
+9,COL1,COL_ground_1,9,1st XI Premier,0
+10,HAW1,HAW_ground_1,10,1st XI Premier,0
+11,BUC1,BUC_ground_1,11,1st XI Div 1,1
+12,ILF1,ILF_ground_1,12,1st XI Div 1,1
+13,SHE1,SHE_ground_1,13,1st XI Div 1,1
+14,WWE1,WWE_ground_1,14,1st XI Div 1,1
+15,FIV1,FIV_ground_1,15,1st XI Div 1,1
+16,HUT1,HUT_ground_1,16,1st XI Div 1,1
+17,LOU1,LOU_ground_1,17,1st XI Div 1,1
+18,UPM1,UPM_ground_1,18,1st XI Div 1,1
+19,OSS1,OSS_ground_1,19,1st XI Div 1,1
+20,HOH1,HOH_ground_1,20,1st XI Div 1,1
+21,GPR1,GPR_ground_1,21,1st XI Div 2,2
+22,SOS1,SOS_ground_1,22,1st XI Div 2,2
+23,OPA1,OPA_ground_1,23,1st XI Div 2,2
+24,ORS1,ORS_ground_1,24,1st XI Div 2,2
+25,HAT1,HAT_ground_1,25,1st XI Div 2,2
+26,BEN1,BEN_ground_1,26,1st XI Div 2,2
+27,WIC1,WIC_ground_1,27,1st XI Div 2,2
+28,FRE1,FRE_ground_1,28,1st XI Div 2,2
+29,LOS1,LOS_ground_1,29,1st XI Div 2,2
+30,WOS1,WOS_ground_1,30,1st XI Div 2,2
+31,OLB1,OLB_ground_1,31,1st XI Div 3,3
+32,SWD1,SWD_ground_1,32,1st XI Div 3,3
+33,HAR1,HAR_ground_1,33,1st XI Div 3,3
+34,WAL1,WAL_ground_1,34,1st XI Div 3,3
+35,ARD1,ARD_ground_1,35,1st XI Div 3,3
+36,EPP1,EPP_ground_1,36,1st XI Div 3,3
+37,GOR1,GOR_ground_1,37,1st XI Div 3,3
+38,SLH1,SLH_ground_1,38,1st XI Div 3,3
+39,WFG1,WFG_ground_1,39,1st XI Div 3,3
+40,WES1,WES_ground_1,40,1st XI Div 3,3
+41,RAI1,RAI_ground_1,41,1st XI Div 3,3
+42,BAR1,BAR_ground_1,42,1st XI Div 3,3
+43,NEW1,NEW_ground_1,43,1st XI Div 3,3
+44,SPR1,SPR_ground_1,44,1st XI Div 3,3
+45,HOR2,HOR_ground_1,5,2nd XI Premier,4
+46,CHE2,CHE_ground_1,3,2nd XI Premier,4
+47,BRE2,BRE_ground_1,1,2nd XI Premier,4
+48,WAN2,WAN_ground_1,2,2nd XI Premier,4
+49,ILF2,ILF_ground_1,12,2nd XI Premier,4
+50,SHE2,SHE_ground_1,13,2nd XI Premier,4
+51,WWE2,WWE_ground_1,14,2nd XI Premier,4
+52,OPA2,OPA_ground_1,23,2nd XI Premier,4
+53,CHI2,CHI_ground_1,7,2nd XI Premier,4
+54,BUC2,BUC_ground_1,11,2nd XI Premier,4
+55,UPM2,UPM_ground_1,18,2nd XI Div 1,5
+56,WIC2,WIC_ground_1,27,2nd XI Div 1,5
+57,HAW2,HAW_ground_1,10,2nd XI Div 1,5
+58,LOU2,LOU_ground_1,17,2nd XI Div 1,5
+59,HUT2,HUT_ground_1,16,2nd XI Div 1,5
+60,COL2,COL_ground_1,9,2nd XI Div 1,5
+61,BIL2,BIL_ground_1,6,2nd XI Div 1,5
+62,FRE2,FRE_ground_1,28,2nd XI Div 1,5
+63,SWD2,SWD_ground_1,32,2nd XI Div 1,5
+64,GPR2,GPR_ground_1,21,2nd XI Div 1,5
+65,BEL2,BEL_ground_1,4,2nd XI Div 2,6
+66,SOS2,SOS_ground_1,22,2nd XI Div 2,6
+67,HAR2,HAR_ground_1,33,2nd XI Div 2,6
+68,WOS2,WOS_ground_1,30,2nd XI Div 2,6
+69,OLB2,OLB_ground_1,31,2nd XI Div 2,6
+70,OSS2,OSS_ground_1,19,2nd XI Div 2,6
+71,ARD2,ARD_ground_1,35,2nd XI Div 2,6
+72,HAD2,HAD_ground_1,8,2nd XI Div 2,6
+73,LOS2,LOS_ground_1,29,2nd XI Div 2,6
+74,EPP2,EPP_ground_1,36,2nd XI Div 2,6
+75,WES2,WES_ground_1,40,2nd XI Div 3,7
+76,ORS2,ORS_ground_1,24,2nd XI Div 3,7
+77,BEN2,BEN_ground_1,26,2nd XI Div 3,7
+78,FIV2,FIV_ground_1,15,2nd XI Div 3,7
+79,SLH2,SLH_ground_1,38,2nd XI Div 3,7
+80,WFG2,WFG_ground_1,39,2nd XI Div 3,7
+81,GOR2,GOR_ground_1,37,2nd XI Div 3,7
+82,WAL2,WAL_ground_1,34,2nd XI Div 3,7
+83,HOH2,HOH_ground_1,25,2nd XI Div 3,7
+84,HAT2,HAT_ground_1,20,2nd XI Div 3,7
+85,UPM3,UPM_ground_2,45,3rd XI Premier,8
+86,BRE3,BRE_ground_2,46,3rd XI Premier,8
+87,SHE3,SHE_ground_2,47,3rd XI Premier,8
+88,HOR3,HOR_ground_2,48,3rd XI Premier,8
+89,HAW3,HAW_ground_2,49,3rd XI Premier,8
+90,HAR3,HAR_ground_2,50,3rd XI Premier,8
+91,WWE3,WWE_ground_2,51,3rd XI Premier,8
+92,WAN3,WAN_ground_2,52,3rd XI Premier,8
+93,ORS3,ORS_ground_2,53,3rd XI Premier,8
+94,HUT3,HUT_ground_2,54,3rd XI Premier,8
+95,LOU3,LOU_ground_2,55,3rd XI Div 1,9
+96,CHE3,CHE_ground_2,56,3rd XI Div 1,9
+97,UPM4,UPM_ground_2,45,3rd XI Div 1,9
+98,FRE3,FRE_ground_2,57,3rd XI Div 1,9
+99,BIL3,BIL_ground_2,58,3rd XI Div 1,9
+100,WAN4,WAN_ground_2,52,3rd XI Div 1,9
+101,BUH3,BUH_ground_2,59,3rd XI Div 1,9
+102,CHE4,CHE_ground_2,56,3rd XI Div 1,9
+103,ILF3,ILF_ground_2,60,3rd XI Div 1,9
+104,OPA3,OPA_ground_2,61,3rd XI Div 1,9
+105,BEL3,BEL_ground_2,62,3rd XI Div 2,10
+106,OSS3,OSS_ground_2,63,3rd XI Div 2,10
+107,WIC3,WIC_ground_2,64,3rd XI Div 2,10
+108,CHI3,CHI_ground_2,65,3rd XI Div 2,10
+109,FIV3,FIV_ground_2,66,3rd XI Div 2,10
+110,LOU4,LOU_ground_2,55,3rd XI Div 2,10
+111,SWD3,SWD_ground_2,67,3rd XI Div 2,10
+112,HOR4,HOR_ground_2,48,3rd XI Div 2,10
+113,BRE4,BRE_ground_2,46,3rd XI Div 2,10
+114,HAR4,HAR_ground_2,50,3rd XI Div 2,10
+115,WAN5,WAN_ground_3,68,3rd XI Div 3,11
+116,SOS3,SOS_ground_2,69,3rd XI Div 3,11
+117,HAW4,HAW_ground_2,49,3rd XI Div 3,11
+118,WAL3,WAL_ground_2,70,3rd XI Div 3,11
+119,FRE4,FRE_ground_2,57,3rd XI Div 3,11
+120,SLH3,SLH_ground_2,71,3rd XI Div 3,11
+121,GPR3,GPR_ground_2,72,3rd XI Div 3,11
+122,WFG3,WFG_ground_2,73,3rd XI Div 3,11
+123,WOS3,WOS_ground_2,74,3rd XI Div 3,11
+124,WES3,WES_ground_2,75,3rd XI Div 3,11
+125,HAT3,HAT_ground_2,76,4th XI Prem East,12
+126,ORS4,ORS_ground_2,53,4th XI Prem East,12
+127,LOS3,LOS_ground_2,77,4th XI Prem East,12
+128,HUT4,HUT_ground_2,54,4th XI Prem East,12
+129,BEL4,BEL_ground_2,62,4th XI Prem East,12
+130,BEN3,BEN_ground_2,78,4th XI Prem East,12
+131,BIL4,BIL_ground_2,58,4th XI Prem East,12
+132,ARD3,ARD_ground_2,79,4th XI Prem East,12
+133,CHE5,CHE_ground_3,80,4th XI Prem East,12
+134,BYE1,BYE_ground_1,81,4th XI Prem East,12
+135,HOH3,HOH_ground_2,82,4th XI Prem West,13
+136,OAP4,OAP_ground_2,83,4th XI Prem West,13
+137,BUH4,BUH_ground_2,59,4th XI Prem West,13
+138,UPM5,UPM_ground_3,84,4th XI Prem West,13
+139,BRE5,BRE_ground_3,85,4th XI Prem West,13
+140,LOU5,LOU_ground_3,86,4th XI Prem West,13
+141,SHE4,SHE_ground_2,47,4th XI Prem West,13
+142,EPP3,EPP_ground_2,87,4th XI Prem West,13
+143,WAL4,WAL_ground_2,70,4th XI Prem West,13
+144,BYE2,BYE_ground_1,81,4th XI Prem West,13
+145,ORS5,ORS_ground_3,88,4th XI Div 1 East,14
+146,SOS4,SOS_ground_2,69,4th XI Div 1 East,14
+147,HOH4,HOH_ground_2,82,4th XI Div 1 East,14
+148,SLH4,SLH_ground_2,71,4th XI Div 1 East,14
+149,LOS4,LOS_ground_2,77,4th XI Div 1 East,14
+150,BEL5,BEL_ground_3,89,4th XI Div 1 East,14
+151,BEN4,BEN_ground_2,78,4th XI Div 1 East,14
+152,HAT4,HAT_ground_2,76,4th XI Div 1 East,14
+153,OSS4,OSS_ground_2,63,4th XI Div 1 East,14
+154,BRE6,BRE_ground_3,85,4th XI Div 1 East,14
+155,OSS5,OSS_ground_3,90,4th XI Div 1 East,14
+156,WIC5,WIC_ground_3,91,4th XI Div 1 East,14
+157,GPR4,GPR_ground_2,72,4th XI Div 1 West,15
+158,SWD4,SWD_ground_2,67,4th XI Div 1 West,15
+159,GOR3,GOR_ground_2,92,4th XI Div 1 West,15
+160,HOR5,HOR_ground_3,93,4th XI Div 1 West,15
+161,OAP5,OAP_ground_3,94,4th XI Div 1 West,15
+162,ILF4,ILF_ground_2,60,4th XI Div 1 West,15
+163,WAN6,WAN_ground_3,68,4th XI Div 1 West,15
+164,CHI4,CHI_ground_2,65,4th XI Div 1 West,15
+165,HAW5,HAW_ground_3,95,4th XI Div 1 West,15
+166,ARD4,ARD_ground_2,79,4th XI Div 1 West,15
+167,HUT5,HUT_ground_3,96,4th XI Div 1 West,15
+168,FIV4,FIV_ground_2,66,4th XI Div 1 West,15

@@ -52,7 +52,9 @@ class TestRelativeFitness(RelativeFitness):
 class TestMutation(Mutation):
     """A simple test Mutation."""
 
-    gene_set: str
+    def __init__(self, fitness: AbsoluteFitness, gene_set: str):
+        self.fitness = fitness
+        self.gene_set = gene_set
 
     def __call__(self, parent: TestChromosome) -> TestChromosome:
         index = 0
