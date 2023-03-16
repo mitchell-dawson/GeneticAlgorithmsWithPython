@@ -88,7 +88,8 @@ class SortNumbersFitness(RelativeFitness):
 
 class SortNumbersMutation(Mutation):
     def __init__(self, fitness: Type[SortNumbersFitness], gene_set: GeneSet):
-        super().__init__(fitness, gene_set)
+        self.fitness = fitness
+        self.gene_set = gene_set
 
     def __call__(self, parent):
         child_genes = parent.genes.copy()

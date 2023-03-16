@@ -197,7 +197,7 @@ class KnapsackMutation(Mutation):
         max_weight: float,
         max_volume: float,
     ):
-        super().__init__(fitness=None, gene_set=gene_set)
+        self.gene_set = gene_set
         self.max_weight = max_weight
         self.max_volume = max_volume
         self.remaining_weight = max_weight

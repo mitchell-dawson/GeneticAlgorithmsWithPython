@@ -64,7 +64,8 @@ class KnightAttackMutation(Mutation):
     def __init__(
         self, fitness: KnightAttackFitness, gene_set: GeneSet, max_knights: int
     ):
-        super().__init__(fitness, gene_set)
+        self.fitness = fitness
+        self.gene_set = gene_set
         self.max_knights = max_knights
 
     def __call__(self, parent: KnightAttackChromosome) -> KnightAttackChromosome:
@@ -187,8 +188,8 @@ def main():
     )
     logging.basicConfig(format=logging_format, level=logging.INFO)
 
-    board_height, board_width = 8, 8
-    max_knights = 14
+    board_height, board_width = 40, 40
+    max_knights = 1200
     include_edges = False  # use edges fo small boards, but not for large boards
     fitness_stagnation_limit = (
         10000  # stop after this many generations of no improvement

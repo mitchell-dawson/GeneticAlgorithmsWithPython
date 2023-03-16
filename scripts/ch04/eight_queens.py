@@ -117,7 +117,8 @@ class EightQueensFitness(AbsoluteFitness):
 
 class EightQueensMutation(Mutation):
     def __init__(self, fitness: EightQueensFitness, gene_set: GeneSet):
-        super().__init__(fitness, gene_set)
+        self.fitness = fitness
+        self.gene_set = gene_set
 
     def __call__(self, parent: EightQueensChromosome) -> EightQueensChromosome:
         """Mutate a chromosome by swapping the value of a chromosome's gene with

@@ -67,7 +67,8 @@ class GraphColoringMutation(Mutation):
     """Mutation function for the graph colouring problem."""
 
     def __init__(self, fitness: GraphColoringFitness, gene_set: GeneSet):
-        super().__init__(fitness, gene_set)
+        self.fitness = fitness
+        self.gene_set = gene_set
 
     def __call__(self, parent: GraphColouringChromosome) -> GraphColouringChromosome:
 

@@ -67,7 +67,8 @@ class GuessPasswordFitness(AbsoluteFitness):
 
 class GuessPasswordMutation(Mutation):
     def __init__(self, fitness: GuessPasswordFitness, gene_set: GeneSet):
-        super().__init__(fitness, gene_set)
+        self.fitness = fitness
+        self.gene_set = gene_set
 
     def __call__(self, parent):
         index = random.randrange(0, len(parent.genes))
