@@ -122,7 +122,14 @@ class SwapUpToNFixturesMutation(FixtureListMutation):
 
 
 class TheNicolaSwitchProcesserMutation(FixtureListMutation):
-    """Mutation function which swaps up to N fixtures"""
+    """I asked Nicola to take a look at the fixture list when it got to a local minimum to see 
+    if she could see how to improve it and she came up with this. It looks for the first division 
+    and week where a team plays twice, then tries to move one of those games to a week with a 
+    free slot. It turns out this is ridiculously powerful and is more efficient temporally and 
+    computationally than the random swapping mutation. This mutation alone is able to solve 
+    the cricket fixtures problem for 16 divisions in 28 weeks with the simple fitness 
+    (plays can’t play twice in a week, teams must all play eachother twice).
+    """
 
     def mutate(self, chromosome: FixtureListChromosome) -> FixtureListChromosome:
 
